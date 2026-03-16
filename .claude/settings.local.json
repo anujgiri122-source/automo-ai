@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\Asus\\\\OneDrive\\\\Desktop\\\\Automo.ai\\\\backend\" && npm install 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\Asus\\\\OneDrive\\\\Desktop\\\\Automo.ai\\\\frontend\" && npm install 2>&1)",
+      "Bash(sleep 3 && curl -s http://localhost:5000/health)",
+      "Bash(curl -s -X POST http://localhost:5000/api/generate-captions \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d \"{\\\\\"businessType\\\\\":\\\\\"gym\\\\\",\\\\\"topic\\\\\":\\\\\"Sunday se 30% off membership offer\\\\\"}\" 2>&1)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
