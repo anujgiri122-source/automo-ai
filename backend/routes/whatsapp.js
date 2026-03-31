@@ -45,13 +45,16 @@ router.post('/webhook', async (req, res) => {
       return;
     }
 
-    if (messageData?.typeMessage !== 'textMessage') {
-      console.log('[WH-HOOK] Non-text message type:', messageData?.typeMessage, '— skipping');
+    const typeMessage = messageData?.typeMessage;
+    if (typeMessage !== 'textMessage' && typeMessage !== 'extendedTextMessage') {
+      console.log('[WH-HOOK] Non-text message type:', typeMessage, '— skipping');
       return;
     }
 
     const phone    = senderData?.chatId?.replace('@c.us', '');
-    const msgText  = messageData?.textMessageData?.textMessage;
+    const msgText  = typeMessage === 'extendedTextMessage'
+      ? messageData?.extendedTextMessageData?.text
+      : messageData?.textMessageData?.textMessage;
     const userName = senderData?.senderName || 'User';
 
     if (!phone || !msgText) {
