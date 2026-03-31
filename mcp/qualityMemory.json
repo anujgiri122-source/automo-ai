@@ -1,0 +1,260 @@
+{
+  "version": 2,
+  "totalGenerated": 10,
+  "totalFlyers": 10,
+  "lastLearnedAt": "2026-03-21T15:55:55.856Z",
+  "byCategory": {
+    "offer": {
+      "topQueries": [
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible rentmykey community",
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+        "vibrant dopamine Indian dairy food summer festive bold typography offer badge phone number visible"
+      ],
+      "avgScore": 92,
+      "count": 8,
+      "bestElements": [
+        "Eid al-Fitr lanterns",
+        "Diya lights",
+        "Navratri themed backgrounds",
+        "sale ribbon",
+        "price burst",
+        "timer",
+        "offer badge",
+        "phone number visible"
+      ],
+      "bestHeadlines": [
+        "NAVRATRI DHAMAKA! 🎁 KHAAS OFFER MIL RHA HAI",
+        "EID OFFER: 50% Off",
+        "EID PE SIRF 50% OFF!",
+        "EID MUBARAK DHAMAKA OFFER!",
+        "Garmi Mein Free Delivery — Aaj Ke Liye!"
+      ]
+    },
+    "festival": {
+      "topQueries": [
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible elegant 40 off rides"
+      ],
+      "avgScore": 92,
+      "count": 1,
+      "bestElements": [
+        "Eid lanterns",
+        "henna patterns",
+        "traditional Eid greeting cards"
+      ],
+      "bestHeadlines": [
+        "Eid Mubarak Offer!"
+      ]
+    }
+  },
+  "byFormat": {
+    "whatsapp_flyer": {
+      "topQueries": [
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+        "vibrant dopamine Indian dairy food summer festive bold typography offer badge phone number visible"
+      ],
+      "avgScore": 93,
+      "count": 5
+    },
+    "instagram_feed": {
+      "topQueries": [
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible rentmykey community",
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible elegant 40 off rides",
+        "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible"
+      ],
+      "avgScore": 93,
+      "count": 3
+    },
+    "instagram_story": {
+      "topQueries": [],
+      "avgScore": 0,
+      "count": 0
+    },
+    "instagram_carousel": {
+      "topQueries": [],
+      "avgScore": 83,
+      "count": 1
+    },
+    "full_campaign": {
+      "topQueries": [],
+      "avgScore": 0,
+      "count": 0
+    }
+  },
+  "byVibe": {
+    "bold": {
+      "topElements": [
+        "sale ribbon",
+        "price burst",
+        "timer",
+        "offer badge",
+        "bold typography"
+      ],
+      "avgScore": 93,
+      "count": 5
+    },
+    "elegant": {
+      "topElements": [
+        "Eid lanterns",
+        "henna patterns",
+        "traditional Eid greeting cards"
+      ],
+      "avgScore": 88,
+      "count": 2
+    },
+    "playful": {
+      "topElements": [],
+      "avgScore": 0,
+      "count": 0
+    },
+    "professional": {
+      "topElements": [
+        "sale ribbon",
+        "price burst",
+        "timer"
+      ],
+      "avgScore": 94,
+      "count": 1
+    },
+    "festive": {
+      "topElements": [
+        "Eid al-Fitr lanterns",
+        "Diya lights",
+        "Navratri themed backgrounds"
+      ],
+      "avgScore": 94,
+      "count": 1
+    }
+  },
+  "categoryProfiles": {},
+  "allFlyers": [
+    {
+      "id": "flyer_1774035296129",
+      "timestamp": "2026-03-20T19:34:56.129Z",
+      "category": "dairy_food_products",
+      "format": "whatsapp_flyer",
+      "vibe": "bold",
+      "brandName": "Amul",
+      "canvaQuery": "vibrant Indian dairy food products Eid al-Fitr celebration bold typography offer badge phone number visible",
+      "headline": "Garmi Mein Free Delivery — Aaj Ke Liye!",
+      "score": 94,
+      "approved": true
+    },
+    {
+      "id": "flyer_1774035748347",
+      "timestamp": "2026-03-20T19:42:28.347Z",
+      "category": "dairy_food_products",
+      "format": "whatsapp_flyer",
+      "vibe": "bold",
+      "brandName": "Amul",
+      "canvaQuery": "vibrant Indian dairy food summer festive red yellow blue premium",
+      "headline": "Garmi Mein Free Delivery - Aaj Ke Liye!",
+      "score": 94,
+      "approved": true
+    },
+    {
+      "id": "flyer_1774036027776",
+      "timestamp": "2026-03-20T19:47:07.776Z",
+      "category": "dairy_food_products",
+      "format": "whatsapp_flyer",
+      "vibe": "bold",
+      "brandName": "Amul",
+      "canvaQuery": "vibrant dopamine Indian dairy food summer festive bold typography offer badge phone number visible",
+      "headline": "Garmi Mein Free Delivery — Aaj Ke Liye!",
+      "score": 96,
+      "approved": true
+    },
+    {
+      "id": "flyer_1774067262616",
+      "timestamp": "2026-03-21T04:27:42.616Z",
+      "category": "dairy_food_products",
+      "brandName": "GCMMF :: Amul - The Taste of India | Bread Spread Producers in India | Milk Chocolate Milk Health Drinks Manufacturers of India | Powder Pasturized Milk in India | Pure Ghee Manufacturers | Pasturized Butter Producer in India",
+      "canvaQuery": "Vibrant Indian festive dairy food products Eid al-Fitr celebration premium glassmorphism bold typography 1080x1080px",
+      "primaryColor": "#0976b4",
+      "title": "Eid Mubarak! Amul Ke Saath",
+      "festivalTieIn": "Eid al-Fitr 🌙",
+      "score": 91,
+      "approved": true
+    },
+    {
+      "id": "gen_1774079429125",
+      "timestamp": "2026-03-21T07:50:29.125Z",
+      "category": "offer",
+      "format": "instagram_carousel",
+      "vibe": "elegant",
+      "brandName": "rentmykey",
+      "canvaQuery": "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+      "headline": "EID MUBARAK OFFER!",
+      "score": 83,
+      "approved": false
+    },
+    {
+      "id": "gen_1774079684860",
+      "timestamp": "2026-03-21T07:54:44.860Z",
+      "category": "offer",
+      "format": "whatsapp_flyer",
+      "vibe": "bold",
+      "brandName": "Example Domain",
+      "canvaQuery": "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+      "headline": "EID MUBARAK DHAMAKA OFFER!",
+      "score": 91,
+      "approved": true
+    },
+    {
+      "id": "gen_1774079734411",
+      "timestamp": "2026-03-21T07:55:34.411Z",
+      "category": "offer",
+      "format": "whatsapp_flyer",
+      "vibe": "bold",
+      "brandName": "Example Domain",
+      "canvaQuery": "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+      "headline": "EID PE SIRF 50% OFF!",
+      "score": 91,
+      "approved": true
+    },
+    {
+      "id": "gen_1774079964616",
+      "timestamp": "2026-03-21T07:59:24.616Z",
+      "category": "offer",
+      "format": "instagram_feed",
+      "vibe": "professional",
+      "brandName": "rentmykey",
+      "canvaQuery": "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible",
+      "headline": "EID OFFER: 50% Off",
+      "score": 94,
+      "approved": true
+    },
+    {
+      "id": "gen_1774080102523",
+      "timestamp": "2026-03-21T08:01:42.523Z",
+      "category": "festival",
+      "format": "instagram_feed",
+      "vibe": "elegant",
+      "brandName": "rentmykey",
+      "canvaQuery": "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible elegant 40 off rides",
+      "headline": "Eid Mubarak Offer!",
+      "score": 92,
+      "approved": true
+    },
+    {
+      "id": "gen_1774108555856",
+      "timestamp": "2026-03-21T15:55:55.856Z",
+      "category": "offer",
+      "format": "instagram_feed",
+      "vibe": "festive",
+      "brandName": "rentmykey",
+      "canvaQuery": "vibrant dopamine Indian Eid al-Fitr celebration bold typography offer badge phone number visible rentmykey community",
+      "headline": "NAVRATRI DHAMAKA! 🎁 KHAAS OFFER MIL RHA HAI",
+      "score": 94,
+      "approved": true
+    }
+  ],
+  "learningLog": [],
+  "globalStats": {
+    "avgScore": 92,
+    "totalApproved": 9,
+    "totalRejected": 1
+  }
+}

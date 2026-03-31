@@ -9,6 +9,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
+        proxyTimeout: 180000,  // 3 min — Playwright + Groq can take ~60s
+        timeout: 180000,
       }
     }
   }

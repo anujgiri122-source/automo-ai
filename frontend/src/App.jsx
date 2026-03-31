@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import CaptionCard from './components/CaptionCard'
+import BrandKit from './components/BrandKit'
+import FlyerGenerator from './components/FlyerGenerator'
 import './App.css'
 
 const BUSINESS_TYPES = [
@@ -34,6 +36,7 @@ function SkeletonCard() {
 }
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState('captions')
   const [businessType, setBusinessType] = useState('')
   const [topic, setTopic] = useState('')
   const [captions, setCaptions] = useState([])
@@ -94,6 +97,37 @@ export default function App() {
         </div>
         <p className="header-subtitle">AI Caption Generator — India ka apna social media manager</p>
       </header>
+
+      {/* Tab Navigation */}
+      <div className="tab-bar">
+        <button
+          className={`tab-btn ${activeTab === 'captions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('captions')}
+        >
+          ✍️ Caption Generator
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'brand' ? 'active' : ''}`}
+          onClick={() => setActiveTab('brand')}
+        >
+          🎨 Brand Kit
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'flyer' ? 'active' : ''}`}
+          onClick={() => setActiveTab('flyer')}
+        >
+          🖼️ Flyer Generator
+        </button>
+      </div>
+
+      {/* Brand Kit Tab */}
+      {activeTab === 'brand' && <BrandKit />}
+
+      {/* Flyer Generator Tab */}
+      {activeTab === 'flyer' && <FlyerGenerator />}
+
+      {/* Caption Generator Tab */}
+      {activeTab === 'captions' && <>
 
       {/* Input Form */}
       <div className="form-card">
@@ -171,6 +205,7 @@ export default function App() {
           <p>Business select karo, topic batao — 5 killer captions ready!</p>
         </div>
       )}
+      </>}
     </div>
   )
 }
