@@ -31,6 +31,7 @@ router.get('/webhook', (req, res) => {
 
 // ── POST /webhook — GREEN-API incoming messages ───────────────────────────────
 router.post('/webhook', async (req, res) => {
+  console.log('[WEBHOOK] Received:', JSON.stringify(req.body).substring(0, 200));
   // Always respond 200 immediately — GREEN-API requires fast ACK
   res.status(200).json({ status: 'received' });
 
