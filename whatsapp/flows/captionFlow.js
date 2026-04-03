@@ -85,18 +85,15 @@ async function handleCaptionRequest(phone, message, session, rawJid) {
     if (state === STATES.IDLE) {
       console.log('[CF] BRANCH: idle + caption keyword → calling Claude API');
 
-      const brandData = await loadBrandData(phone, session);
-      console.log('[CF] brandData:', JSON.stringify(brandData));
-
-      let captions;
-      try {
-        console.log('[CF] Sending to Claude API | offer:', text);
-        captions = await generateSmartCaptions(brandData, 'post', text, 'instagram');
-        console.log('[CF] Claude returned', captions?.length, 'captions');
-      } catch (apiErr) {
-        console.error('[CF] Claude API error:', apiErr.message);
-        return 'Caption generate karne mein thodi problem hui 😅 Ek baar aur try karo!';
-      }
+      // Hardcoded test captions — replace with Claude API call once confirmed working
+      const captions = [
+        { text: `🔥 ${text}\n\nSirf aaj! Limited time offer. Book karo abhi! 📞` },
+        { text: `✨ ${text}\n\nAapke sapno ka look, ab affordable price mein. Aajao! 😊` },
+        { text: `💯 ${text}\n\nQuality service, best price. Customers ki first choice! ⭐` },
+        { text: `🎉 ${text}\n\nSpecial offer sirf aaj ke liye! Miss mat karna. Call karo! 📱` },
+        { text: `👑 ${text}\n\nProfessional service at your doorstep. Book now! 🙌` },
+      ];
+      console.log('[CF] Hardcoded test captions generated');
 
       // Store captions in session context so we can retrieve the selected one later
       await updateSession(phone, STATES.CAPTION_REQUESTED, {
