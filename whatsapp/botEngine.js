@@ -3,7 +3,9 @@
  * Reads session state → dispatches to the right flow
  */
 
-const { getSession, resetSession, isSessionExpired, STATES } = require('./stateMachine');
+const { getSession, resetSession, updateSession, isSessionExpired, STATES } = require('./stateMachine');
+const supabase = require('../backend/supabase');
+const { sendMessage } = require('../backend/services/aisensyService');
 const { handleOnboarding }      = require('./flows/onboardingFlow');
 const { getHelpMessage }        = require('./flows/helpFlow');
 const { handleCaptionRequest, isCaptionRequest } = require('./flows/captionFlow');
@@ -38,6 +40,53 @@ const PRICING_MSG = `📊 *Automo AI Plans*
 
 Upgrade karna hai? *upgrade* likho! 🚀`;
 
+// ── Supabase helpers ───────────────────────────────────────────────────────────
+
+async function getUserByPhone(phone) {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, phone, business_name, business_type')
+    .eq('phone', phone)
+    .single();
+  if (error && error.code !== 'PGRST116') console.error('[BE] getUserByPhone error:', error.message);
+  return data || null;
+}
+
+async function getBrandKit(userId) {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('brand_kits')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+  if (error && error.code !== 'PGRST116') console.error('[BE] getBrandKit error:', error.message);
+  return data || null;
+}
+
+async function getOwner() {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, phone, business_name')
+    .limit(1);
+  if (error) { console.error('[BE] getOwner error:', error.message); return null; }
+  return data?.[0] || null;
+}
+
+async function saveLead(ownerUserId, leadPhone, message, intent) {
+  if (!supabase) { console.warn('[BE] Supabase null — lead NOT saved'); return; }
+  const { error } = await supabase.from('leads').insert({
+    user_id: ownerUserId,
+    lead_number: leadPhone,
+    message,
+    intent,
+    created_at: new Date().toISOString(),
+  });
+  if (error) console.error('[BE] Lead save error:', error.message);
+  else console.log('[BE] Lead saved → owner:', ownerUserId, '| lead:', leadPhone);
+}
+
 // ── Main router ────────────────────────────────────────────────────────────────
 
 async function processMessage(phone, messageText, rawJid) {
@@ -56,15 +105,60 @@ async function processMessage(phone, messageText, rawJid) {
   }
 
   // ── Load session ────────────────────────────────────────────────────────────
-  const session = await getSession(phone);
+  let session = await getSession(phone);
   console.log('[BE] SESSION:', session
     ? `state=${session.current_state} | ctx=${JSON.stringify(session.context)}`
     : 'null (new user)');
 
-  // New user — no session record at all
+  // No session record — could be returning user (session expired/cleared) or brand new
   if (!session) {
-    console.log('[BE] BRANCH: no session → new user → onboarding');
-    return handleOnboarding(phone, text, null, rawJid);
+    console.log('[BE] BRANCH: no session — checking users table for:', phone);
+    const existingUser = await getUserByPhone(phone);
+
+    if (existingUser) {
+      // Registered user whose session expired — restore IDLE session with brand context
+      console.log('[BE] Returning user found:', existingUser.business_name, '— restoring IDLE session');
+      const brandKit = await getBrandKit(existingUser.id);
+      console.log('[BE] Brand kit loaded:', brandKit ? 'yes (id=' + brandKit.id + ')' : 'none');
+      session = await updateSession(phone, STATES.IDLE, {
+        user_id: existingUser.id,
+        business_name: existingUser.business_name,
+        brand_kit: brandKit || {},
+      });
+      console.log('[BE] Session restored — falling through to IDLE routing');
+      // Falls through to isSessionExpired check + normal IDLE routing below
+
+    } else {
+      // Unregistered number — check for lead keywords before starting onboarding
+      const lower = text.toLowerCase();
+      const PRICE_KW   = ['price', 'cost', 'kitna', 'rate', 'charge', 'fees'];
+      const BOOKING_KW = ['book', 'slot', 'appointment', 'available'];
+      const isPriceIntent   = PRICE_KW.some(kw => lower.includes(kw));
+      const isBookingIntent = BOOKING_KW.some(kw => lower.includes(kw));
+
+      if (isPriceIntent || isBookingIntent) {
+        const intent = isPriceIntent ? 'PRICE' : 'BOOKING';
+        console.log('[BE] BRANCH: unregistered + lead keyword → lead capture | intent:', intent);
+
+        const owner = await getOwner();
+        if (owner) {
+          await saveLead(owner.id, phone, text, intent);
+          const ownerNotif = `🔔 Naya Lead Aaya!\n\nNumber: ${phone}\nMessage: ${text}\nIntent: ${intent}\n\nAuto-reply bhej diya. ✅`;
+          await sendMessage(owner.phone, ownerNotif);
+          console.log('[BE] Owner notified:', owner.phone);
+        } else {
+          console.warn('[BE] No owner found in DB — lead not saved');
+        }
+
+        return isPriceIntent
+          ? `Namaste! 😊 Abhi special offer chal raha hai.\nAapka naam aur preferred time batayein —\nhum aapko personally confirm karenge! 🙏`
+          : `Bilkul! Aapka naam aur convenient time batayein 😊\nSlot confirm kar denge!`;
+      }
+
+      // Truly new number with no lead intent → start onboarding
+      console.log('[BE] BRANCH: new unregistered number → onboarding');
+      return handleOnboarding(phone, text, null, rawJid);
+    }
   }
 
   // Session expired (30 min idle) → reset and greet

@@ -29,7 +29,7 @@ async function handleOnboarding(phone, message, session, rawJid) {
     console.log('[OB] SAVING STATE: onboarding_name');
     const result = await updateSession(phone, STATES.ONBOARDING_NAME, {});
     console.log('[OB] STATE SAVED:', result ? 'ok' : 'FAILED — check Supabase');
-    return 'Namaste! 🙏 Main hoon Automo AI — tumhara personal social media manager.\n\nPehle batao, tumhara business ka naam kya hai?';
+    return 'Namaste! Main hoon Automo AI 🤖\n\nMain aapka WhatsApp pe social media manager hoon.\nEk message bhejo → captions + flyer banaunga → Instagram pe post kar dunga.\n\nKoi app nahi. Koi laptop nahi. Sirf WhatsApp. ✨\n\nShuru karte hain? Aapka naam kya hai?';
   }
 
   // Received business name
@@ -41,7 +41,7 @@ async function handleOnboarding(phone, message, session, rawJid) {
     console.log('[OB] SAVING STATE: onboarding_type | context:', JSON.stringify(context));
     const result = await updateSession(phone, STATES.ONBOARDING_TYPE, context);
     console.log('[OB] STATE SAVED:', result ? 'ok' : 'FAILED — check Supabase');
-    return `Badiya! *${text}* — ek dum sahi naam! 😄\n\nBusiness type kya hai?\n1️⃣ Cafe/Restaurant\n2️⃣ Gym/Fitness\n3️⃣ Salon/Beauty\n4️⃣ Hotel\n5️⃣ Coaching Centre\n6️⃣ Other`;
+    return `Badiya naam, *${text}*! 😄\n\nAapka business kya hai?\n1️⃣ Cafe/Restaurant\n2️⃣ Gym/Fitness\n3️⃣ Salon/Beauty\n4️⃣ Hotel\n5️⃣ Coaching Centre\n6️⃣ Dukaan/Other`;
   }
 
   // Received business type number
@@ -54,7 +54,7 @@ async function handleOnboarding(phone, message, session, rawJid) {
     console.log('[OB] SAVING STATE: onboarding_link | context:', JSON.stringify(context));
     const result = await updateSession(phone, STATES.ONBOARDING_LINK, context);
     console.log('[OB] STATE SAVED:', result ? 'ok' : 'FAILED — check Supabase');
-    return 'Website ya Instagram link hai? Bhej do — sab automatically set ho jayega! 🔗\nYa *skip* likho manual setup ke liye';
+    return 'Aapna Instagram ya website link bhejo — main logo + colors le lunga! 🔗\nYa *skip* likho aage badhne ke liye';
   }
 
   // Received website link or "skip"
@@ -100,8 +100,7 @@ async function handleOnboarding(phone, message, session, rawJid) {
 
     console.log('[OB] SAVING STATE: idle (onboarding complete)');
     await updateSession(phone, STATES.IDLE, {});
-    const typeLabel = TYPE_LABELS[context.business_type] || context.business_type;
-    return `Setup done! ✅\n📌 Business: ${context.business_name}\n🏷️ Type: ${typeLabel}\n\nAb try karo — koi bhi post idea likh do!\nJaise: *"monday motivation post"* ya *"diwali offer poster banao"* 💪`;
+    return 'Brand Kit save ho gaya! ✅ Ab batao — aaj kya post banana hai?';
   }
 
   console.warn('[OB] No matching state branch for:', state, '— returning null');
