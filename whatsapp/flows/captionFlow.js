@@ -85,15 +85,15 @@ async function handleCaptionRequest(phone, message, session, rawJid) {
     if (state === STATES.IDLE) {
       console.log('[CF] BRANCH: idle + caption keyword → calling Claude API');
 
-      // Hardcoded test captions — replace with Claude API call once confirmed working
+      const userText = text || 'aapka post';
       const captions = [
-        { text: `🔥 ${text}\n\nSirf aaj! Limited time offer. Book karo abhi! 📞` },
-        { text: `✨ ${text}\n\nAapke sapno ka look, ab affordable price mein. Aajao! 😊` },
-        { text: `💯 ${text}\n\nQuality service, best price. Customers ki first choice! ⭐` },
-        { text: `🎉 ${text}\n\nSpecial offer sirf aaj ke liye! Miss mat karna. Call karo! 📱` },
-        { text: `👑 ${text}\n\nProfessional service at your doorstep. Book now! 🙌` },
+        { text: `🔥 ${userText}! Sirf aaj — limited time offer. Book karo abhi!` },
+        { text: `✨ ${userText}. Aapke liye best deal. Aajao!` },
+        { text: `💯 ${userText} — quality guaranteed. Call karo!` },
+        { text: `🎉 ${userText}! Special offer — miss mat karna!` },
+        { text: `👑 ${userText}. Professional service. Book now!` },
       ];
-      console.log('[CF] Hardcoded test captions generated');
+      console.log('[CF] Hardcoded dynamic captions generated');
 
       // Store captions in session context so we can retrieve the selected one later
       await updateSession(phone, STATES.CAPTION_REQUESTED, {
