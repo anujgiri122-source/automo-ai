@@ -7,7 +7,14 @@ const BUSINESS_TYPES = {
   '3': 'salon',
   '4': 'hotel',
   '5': 'coaching',
-  '6': 'other'
+  '6': 'other',
+  // also accept text names
+  'cafe': 'cafe', 'restaurant': 'cafe', 'coffee': 'cafe',
+  'gym': 'gym', 'fitness': 'gym', 'yoga': 'gym',
+  'salon': 'salon', 'beauty': 'salon', 'parlour': 'salon', 'parlor': 'salon', 'spa': 'salon',
+  'hotel': 'hotel',
+  'coaching': 'coaching', 'tuition': 'coaching', 'classes': 'coaching', 'institute': 'coaching',
+  'shop': 'other', 'store': 'other', 'dukaan': 'other', 'other': 'other',
 };
 
 const TYPE_LABELS = {
@@ -44,9 +51,9 @@ async function handleOnboarding(phone, message, session, rawJid) {
     return `Badiya naam, *${text}*! 😄\n\nAapka business kya hai?\n1️⃣ Cafe/Restaurant\n2️⃣ Gym/Fitness\n3️⃣ Salon/Beauty\n4️⃣ Hotel\n5️⃣ Coaching Centre\n6️⃣ Dukaan/Other`;
   }
 
-  // Received business type number
+  // Received business type — accept number (1-6) or text name
   if (state === STATES.ONBOARDING_TYPE) {
-    const businessType = BUSINESS_TYPES[text];
+    const businessType = BUSINESS_TYPES[text.toLowerCase()] || BUSINESS_TYPES[text];
     if (!businessType) {
       return '1 se 6 ke beech number bhejo yaar 😅\n\n1️⃣ Cafe/Restaurant\n2️⃣ Gym/Fitness\n3️⃣ Salon/Beauty\n4️⃣ Hotel\n5️⃣ Coaching Centre\n6️⃣ Other';
     }
@@ -70,6 +77,7 @@ async function handleOnboarding(phone, message, session, rawJid) {
           .insert({
             whatsapp_number: phone,
             business_name:   context.business_name,
+            category:        context.business_type || 'other',
           })
           .select()
           .single();
