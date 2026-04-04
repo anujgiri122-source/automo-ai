@@ -68,11 +68,8 @@ async function handleOnboarding(phone, message, session, rawJid) {
         const { data: user, error: userErr } = await supabase
           .from('users')
           .insert({
-            phone,
-            business_name: context.business_name,
-            business_type: context.business_type,
-            plan: 'free',
-            onboarding_complete: true
+            whatsapp_number: phone,
+            business_name:   context.business_name,
           })
           .select()
           .single();
@@ -82,10 +79,8 @@ async function handleOnboarding(phone, message, session, rawJid) {
         } else {
           console.log('[OB] User saved:', user?.id);
           const { error: bkErr } = await supabase.from('brand_kits').insert({
-            user_id:       user.id,
-            business_name: context.business_name,
-            business_type: context.business_type,
-            detected_via:  link ? 'link' : 'manual'
+            user_id: user.id,
+            tone:    context.business_type || 'professional',
           });
           if (bkErr) console.error('[OB] SUPABASE ERROR saving brand_kit:', bkErr.message);
           else console.log('[OB] Brand kit saved for user:', user.id);

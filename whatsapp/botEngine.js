@@ -46,8 +46,8 @@ async function getUserByPhone(phone) {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('users')
-    .select('id, phone, business_name, business_type')
-    .eq('phone', phone)
+    .select('id, whatsapp_number, business_name')
+    .eq('whatsapp_number', phone)
     .single();
   if (error && error.code !== 'PGRST116') console.error('[BE] getUserByPhone error:', error.message);
   return data || null;
