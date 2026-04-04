@@ -161,11 +161,17 @@ async function processMessage(phone, messageText, rawJid) {
     }
   }
 
-  // Session expired (30 min idle) → reset and greet
+  // Session expired (30 min idle) → restore IDLE with brand context, fall through
   if (isSessionExpired(session)) {
-    console.log('[BE] BRANCH: session expired → reset to IDLE');
-    await resetSession(phone);
-    return 'Wapas aaye! 👋 Kya help chahiye?\n\n*help* likho features dekhne ke liye';
+    console.log('[BE] BRANCH: session expired → restore IDLE');
+    const existingUser = await getUserByPhone(phone);
+    const brandKit = existingUser ? await getBrandKit(existingUser.id) : null;
+    session = await updateSession(phone, STATES.IDLE, {
+      user_id: existingUser?.id,
+      business_name: existingUser?.business_name,
+      brand_kit: brandKit || {},
+    });
+    console.log('[BE] Session restored to IDLE — falling through to IDLE routing');
   }
 
   const state = session.current_state;
