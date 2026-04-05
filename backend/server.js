@@ -11,7 +11,15 @@ const bufferRouter    = require('./routes/buffer');
 const whatsappRouter  = require('./routes/whatsapp');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://frontend-rosy-two-hkq9f9y87m.vercel.app',
+    /\.vercel\.app$/,
+  ],
+  credentials: true,
+}));
 
 // Webhook needs raw body for signature verification — MUST be before express.json()
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
