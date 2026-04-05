@@ -203,7 +203,8 @@ const CATEGORY_PROFILES = {
 // ═══════════════════════════════════════════════════════════
 
 // ─── Complete Indian festival calendar — 2025 + 2026 ───────────────────────
-// Each entry: name, slug (for manual override), date, emoji, mood, shopRelevance,
+// Each entry: name, slug (for manual override
+// ), date, emoji, mood, shopRelevance,
 //             durationDays (how many days the festival lasts)
 const FESTIVALS_2026 = [
   // ── 2025 festivals still in the future window ──
