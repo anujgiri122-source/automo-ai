@@ -90,5 +90,5 @@ app.use('/api/payment',   paymentRouter);
 app.use('/api/buffer',    bufferRouter);
 app.use('/api/whatsapp',  whatsappRouter);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Automo AI server running on port ${PORT}`));
