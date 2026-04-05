@@ -2,6 +2,7 @@ import { useState } from 'react'
 import CaptionCard from './components/CaptionCard'
 import BrandKit from './components/BrandKit'
 import FlyerGenerator from './components/FlyerGenerator'
+import { apiUrl } from './api'
 import './App.css'
 
 const BUSINESS_TYPES = [
@@ -61,7 +62,7 @@ export default function App() {
     setCaptions([])
 
     try {
-      const res = await fetch('/api/generate-captions', {
+      const res = await fetch(apiUrl('/api/generate-captions'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ businessType, topic: topic.trim() }),

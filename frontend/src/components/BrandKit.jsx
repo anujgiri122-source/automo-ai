@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { apiUrl } from '../api'
 import './BrandKit.css'
 
 const CATEGORIES = [
@@ -68,7 +69,7 @@ export default function BrandKit() {
 
     try {
       // Step 1: Create/update user
-      const userRes = await fetch('/api/users', {
+      const userRes = await fetch(apiUrl('/api/users'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -88,7 +89,7 @@ export default function BrandKit() {
         const formData = new FormData()
         formData.append('logo', logoFile)
         formData.append('user_id', uid)
-        const logoRes = await fetch('/api/brand-kit/logo', {
+        const logoRes = await fetch(apiUrl('/api/brand-kit/logo'), {
           method: 'POST',
           body: formData,
         })
@@ -98,7 +99,7 @@ export default function BrandKit() {
       }
 
       // Step 3: Save brand kit
-      const kitRes = await fetch('/api/brand-kit', {
+      const kitRes = await fetch(apiUrl('/api/brand-kit'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

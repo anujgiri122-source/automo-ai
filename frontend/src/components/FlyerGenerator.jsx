@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { apiUrl } from '../api'
 import './FlyerGenerator.css'
 
 // ── Question definitions (mirrors mcp/userPreferences.js) ─────────────────
@@ -183,7 +184,7 @@ export default function FlyerGenerator() {
     }, 5000)
 
     try {
-      const res = await fetch('/api/generate', {
+      const res = await fetch(apiUrl('/api/generate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ websiteUrl: websiteUrl.trim(), userPreferences: finalPrefs }),
