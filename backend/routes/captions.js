@@ -51,12 +51,86 @@ Return this exact JSON array:
 }
 
 const STYLE_META = {
-  urgency:      { label: 'Urgency',      description: 'FOMO / Limited Time' },
-  story:        { label: 'Story',        description: 'Emotional Storytelling' },
-  festival:     { label: 'Festival',     description: 'Festival / Trend' },
-  social_proof: { label: 'Social Proof', description: 'Reviews / Trust' },
-  education:    { label: 'Education',    description: 'Tips / Expert' },
+  urgency:        { label: 'Urgency',        description: 'FOMO / Scarcity' },
+  transformation: { label: 'Transformation', description: 'Before/After Emotion' },
+  price_anchor:   { label: 'Price Anchor',   description: 'Value + Savings' },
+  social_proof:   { label: 'Social Proof',   description: 'Trust + Community' },
+  curiosity:      { label: 'Curiosity',      description: 'Mystery + Exclusivity' },
 };
+
+const SYSTEM_PROMPT = `You are India's #1 conversion copywriter for small businesses. You write captions that make people STOP scrolling and TAKE ACTION immediately.
+
+You know these psychological triggers work in India:
+- Scarcity makes people 2-3x more likely to book
+- Hinglish gets 79% higher engagement than English
+- Specific offers convert 5x better than vague ones
+- Pain points in first line = instant stop scroll
+- WhatsApp CTA gets 4x more responses than 'link in bio'
+
+STRICT CAPTION RULES:
+1. First line = HOOK (pain point or curiosity)
+   GOOD: 'Arre yaar, bad hair day phir se? 😤'
+   BAD: 'Get 50% off at our salon'
+
+2. Middle = VALUE (specific offer + social proof)
+   GOOD: '500+ clients ki favorite keratin treatment, aaj sirf ₹999 mein!'
+   BAD: 'We offer quality services at discount'
+
+3. Last line = CTA (WhatsApp/DM trigger)
+   GOOD: 'DM HAIR abhi — sirf 5 slots baaki!'
+   BAD: 'Contact us for more info'
+
+4. Language rules:
+   - Mix Hindi + English naturally
+   - Use: yaar, abhi, kar lo, arre, bhai, sirf, bahut, ekdum
+   - Feel like best friend giving advice
+   - NEVER sound like advertisement
+
+5. Emotion triggers to use:
+   - FOMO: 'Sirf aaj', 'Last 3 slots'
+   - Social proof: '500+ happy clients'
+   - Transformation: before/after story
+   - Price anchor: 'Usually ₹2000, aaj ₹999'
+   - Urgency: 'Offer ends tonight'
+
+OUTPUT FORMAT — JSON only, no explanation:
+[
+  {
+    "style": "urgency",
+    "trigger": "FOMO + Scarcity",
+    "hinglish_caption": "...",
+    "english_caption": "...",
+    "expected_action": "Will DM within 5 mins"
+  },
+  {
+    "style": "transformation",
+    "trigger": "Before/After Emotion",
+    "hinglish_caption": "...",
+    "english_caption": "...",
+    "expected_action": "..."
+  },
+  {
+    "style": "price_anchor",
+    "trigger": "Value + Savings",
+    "hinglish_caption": "...",
+    "english_caption": "...",
+    "expected_action": "..."
+  },
+  {
+    "style": "social_proof",
+    "trigger": "Trust + Community",
+    "hinglish_caption": "...",
+    "english_caption": "...",
+    "expected_action": "..."
+  },
+  {
+    "style": "curiosity",
+    "trigger": "Mystery + Exclusivity",
+    "hinglish_caption": "...",
+    "english_caption": "...",
+    "expected_action": "..."
+  }
+]`;
 
 async function generateCaptionsForUI(businessType, topic) {
   const axios = require('axios');
@@ -65,25 +139,18 @@ async function generateCaptionsForUI(businessType, topic) {
 
   if (!baseUrl || !apiKey) throw new Error('AICREDITS_BASE_URL or AICREDITS_API_KEY not set in .env');
 
-  const prompt = `Business Type: ${businessType}
-Topic / Post Idea: ${topic}
-
-You are Automo AI — India's smartest social media content creator for local businesses.
-Generate exactly 5 captions. For EACH caption provide BOTH a Hinglish version and an English version.
-Include relevant emojis, a clear call-to-action, and 3-5 hashtags per caption.
-
-Return ONLY this exact JSON array (no markdown, no extra text):
-[
-  {"style":"urgency","hinglish":"...","english":"...","hashtags":["#tag1","#tag2","#tag3"]},
-  {"style":"story","hinglish":"...","english":"...","hashtags":["#tag1","#tag2","#tag3"]},
-  {"style":"festival","hinglish":"...","english":"...","hashtags":["#tag1","#tag2","#tag3"]},
-  {"style":"social_proof","hinglish":"...","english":"...","hashtags":["#tag1","#tag2","#tag3"]},
-  {"style":"education","hinglish":"...","english":"...","hashtags":["#tag1","#tag2","#tag3"]}
-]`;
+  const userMessage = `Generate 5 captions for:\nBusiness: ${businessType}\nOffer: ${topic}`;
 
   const response = await axios.post(
     `${baseUrl}/chat/completions`,
-    { model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.8 },
+    {
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+      temperature: 0.85,
+    },
     { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` } }
   );
 
@@ -96,10 +163,15 @@ Return ONLY this exact JSON array (no markdown, no extra text):
     parsed = JSON.parse(clean);
   }
 
+  // Remap to frontend shape: hinglish/english fields + label/description
   return parsed.map(cap => ({
-    ...cap,
-    label:       STYLE_META[cap.style]?.label       || cap.style,
-    description: STYLE_META[cap.style]?.description || '',
+    style:           cap.style,
+    hinglish:        cap.hinglish_caption,
+    english:         cap.english_caption,
+    trigger:         cap.trigger,
+    expected_action: cap.expected_action,
+    label:           STYLE_META[cap.style]?.label       || cap.style,
+    description:     STYLE_META[cap.style]?.description || cap.trigger || '',
   }));
 }
 
