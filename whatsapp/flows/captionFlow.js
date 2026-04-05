@@ -4,7 +4,6 @@
  */
 
 const { STATES, updateSession } = require('../stateMachine');
-const { generateSmartCaptions } = require('../../backend/routes/captions');
 const supabase = require('../../backend/supabase');
 
 // Words that signal a caption request
@@ -20,8 +19,6 @@ function isCaptionRequest(text) {
   return CAPTION_KEYWORDS.some(kw => lower.includes(kw));
 }
 
-// Load brand data from session context (set by botEngine for returning users)
-// or fall back to a Supabase lookup by phone number
 async function loadBrandData(phone, session) {
   console.log('[CF] loadBrandData for phone:', phone);
   if (session?.context?.brand_kit && session?.context?.business_name) {
@@ -30,12 +27,11 @@ async function loadBrandData(phone, session) {
     return {
       name: session.context.business_name,
       category: bk.business_type || 'general',
-      mood: 'professional and friendly',
     };
   }
   if (!supabase) {
     console.warn('[CF] Supabase null — using default brand data');
-    return { name: 'My Business', category: 'general', mood: 'professional and friendly' };
+    return { name: 'My Business', category: 'general' };
   }
   const { data: user, error } = await supabase
     .from('users')
@@ -45,14 +41,67 @@ async function loadBrandData(phone, session) {
   if (error && error.code !== 'PGRST116') console.error('[CF] loadBrandData DB error:', error.message);
   if (!user) {
     console.warn('[CF] User not found for phone:', phone, '— using defaults');
-    return { name: 'My Business', category: 'general', mood: 'professional and friendly' };
+    return { name: 'My Business', category: 'general' };
   }
   console.log('[CF] Loaded user from DB:', user.business_name, user.business_type);
   return {
     name: user.business_name || 'My Business',
     category: user.business_type || 'general',
-    mood: 'professional and friendly',
   };
+}
+
+async function generateCaptionsViaAiCredits(businessName, userMessage) {
+  const baseUrl = process.env.AICREDITS_BASE_URL;
+  const apiKey = process.env.AICREDITS_API_KEY;
+
+  if (!baseUrl || !apiKey) {
+    throw new Error('AICREDITS_BASE_URL or AICREDITS_API_KEY not set in .env');
+  }
+
+  const prompt = `Generate 5 Instagram captions in Hinglish for Indian small business.
+Business: ${businessName}
+Post idea: ${userMessage}
+
+Styles: urgency, emotional, offer, curiosity, direct CTA
+Each caption max 150 chars with CTA
+
+Return ONLY a JSON array of exactly 5 objects, each with a "text" field. No explanation, no markdown.
+Example format: [{"text":"..."},{"text":"..."},{"text":"..."},{"text":"..."},{"text":"..."}]`;
+
+  console.log('[CF] Calling AiCredits API | business:', businessName, '| prompt:', userMessage.substring(0, 60));
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.8,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`AiCredits API error ${response.status}: ${errText}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content || '';
+  console.log('[CF] AiCredits raw response:', content.substring(0, 300));
+
+  // Extract JSON array from response (handles markdown code blocks too)
+  const jsonMatch = content.match(/\[[\s\S]*?\]/);
+  if (!jsonMatch) throw new Error('No JSON array found in AiCredits response');
+
+  const captions = JSON.parse(jsonMatch[0]);
+  if (!Array.isArray(captions) || captions.length === 0) {
+    throw new Error('Invalid captions array from AiCredits');
+  }
+
+  return captions.slice(0, 5);
 }
 
 function formatCaptionsMessage(captions, isRegenerate = false) {
@@ -81,21 +130,22 @@ async function handleCaptionRequest(phone, message, session, rawJid) {
   const state = session?.current_state || STATES.IDLE;
 
   try {
-    // ── IDLE + caption keyword → call real Claude API ────────────────────────
+    // ── IDLE + caption keyword → call AiCredits API ───────────────────────────
     if (state === STATES.IDLE) {
-      console.log('[CF] BRANCH: idle + caption keyword → calling Claude API');
+      console.log('[CF] BRANCH: idle + caption keyword → calling AiCredits API');
 
       const userText = text || 'aapka post';
-      const captions = [
-        { text: `🔥 ${userText}! Sirf aaj — limited time offer. Book karo abhi!` },
-        { text: `✨ ${userText}. Aapke liye best deal. Aajao!` },
-        { text: `💯 ${userText} — quality guaranteed. Call karo!` },
-        { text: `🎉 ${userText}! Special offer — miss mat karna!` },
-        { text: `👑 ${userText}. Professional service. Book now!` },
-      ];
-      console.log('[CF] Hardcoded dynamic captions generated');
+      const brandData = await loadBrandData(phone, session);
 
-      // Store captions in session context so we can retrieve the selected one later
+      let captions;
+      try {
+        captions = await generateCaptionsViaAiCredits(brandData.name, userText);
+        console.log('[CF] Generated', captions.length, 'captions via AiCredits');
+      } catch (apiErr) {
+        console.error('[CF] AiCredits API error:', apiErr.message);
+        return 'Caption generate karne mein thodi problem hui 😅 Ek baar aur try karo!';
+      }
+
       await updateSession(phone, STATES.CAPTION_REQUESTED, {
         ...(session?.context || {}),
         caption_prompt: text,
@@ -110,17 +160,15 @@ async function handleCaptionRequest(phone, message, session, rawJid) {
     if (state === STATES.CAPTION_REQUESTED) {
       console.log(`[CF] BRANCH: caption_requested | input="${text}"`);
 
-      // 'r' or 'regenerate' → call Claude API again with same prompt
       if (text.toLowerCase() === 'r' || text.toLowerCase() === 'regenerate') {
-        console.log('[CF] Regenerate requested — calling Claude API again');
+        console.log('[CF] Regenerate requested — calling AiCredits API again');
         const prompt = session?.context?.caption_prompt || text;
         const brandData = await loadBrandData(phone, session);
 
         let captions;
         try {
-          console.log('[CF] Regenerating captions | prompt:', prompt);
-          captions = await generateSmartCaptions(brandData, 'post', prompt, 'instagram');
-          console.log('[CF] Regenerated', captions?.length, 'captions');
+          captions = await generateCaptionsViaAiCredits(brandData.name, prompt);
+          console.log('[CF] Regenerated', captions.length, 'captions via AiCredits');
         } catch (apiErr) {
           console.error('[CF] Regenerate API error:', apiErr.message);
           return 'Caption generate karne mein thodi problem hui 😅 Ek baar aur try karo!';
@@ -145,7 +193,7 @@ async function handleCaptionRequest(phone, message, session, rawJid) {
 
       const savedCaptions = session?.context?.captions;
       const selectedCaption = savedCaptions?.[num - 1];
-      console.log('[CF] Selected caption:', selectedCaption?.style, '|', selectedCaption?.text?.substring(0, 60));
+      console.log('[CF] Selected caption:', selectedCaption?.text?.substring(0, 60));
 
       const context = {
         ...(session?.context || {}),
