@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-const { generateSmartCaptions } = require('./routes/captions');
+const { generateSmartCaptions, generateCaptionsForUI } = require('./routes/captions');
 const { handleFlyerRequest } = require('./routes/flyer');
 const { deductCredits, getCredits } = require('./routes/credits');
 const { logPost } = require('./routes/post');
@@ -19,6 +19,19 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'automo-ai' }));
+
+// POST /api/generate-captions — UI caption generator (businessType + topic)
+app.post('/api/generate-captions', async (req, res) => {
+  try {
+    const { businessType, topic } = req.body;
+    if (!businessType && !topic) return res.status(400).json({ error: 'businessType or topic is required' });
+    const captions = await generateCaptionsForUI(businessType, topic);
+    res.json({ captions });
+  } catch (err) {
+    console.error('generate-captions error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // POST /api/captions — generate AI captions for a post
 app.post('/api/captions', async (req, res) => {

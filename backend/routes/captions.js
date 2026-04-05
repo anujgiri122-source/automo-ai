@@ -132,6 +132,40 @@ OUTPUT FORMAT — JSON only, no explanation:
   }
 ]`;
 
+async function extractIntent(rawInput, axios, baseUrl, apiKey) {
+  const response = await axios.post(
+    `${baseUrl}/chat/completions`,
+    {
+      model: 'gpt-4o-mini',
+      messages: [{
+        role: 'user',
+        content: `Extract structured info from this message. The user is an Indian small business owner.
+
+Message: "${rawInput}"
+
+Return ONLY this JSON (no explanation, no markdown):
+{
+  "businessName": "extracted name or null",
+  "businessType": "extracted type (e.g. hotel, salon, gym, cafe) or null",
+  "offer": "the offer or discount or topic being promoted",
+  "audience": "target audience if mentioned, else null",
+  "instructions": "any special instructions or tone preferences, else null"
+}`,
+      }],
+      temperature: 0.3,
+    },
+    { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` } }
+  );
+
+  const raw = response.data.choices[0].message.content.trim();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const clean = raw.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  }
+}
+
 async function generateCaptionsForUI(businessType, topic) {
   const axios = require('axios');
   const baseUrl = process.env.AICREDITS_BASE_URL;
@@ -139,7 +173,21 @@ async function generateCaptionsForUI(businessType, topic) {
 
   if (!baseUrl || !apiKey) throw new Error('AICREDITS_BASE_URL or AICREDITS_API_KEY not set in .env');
 
-  const userMessage = `Generate 5 captions for:\nBusiness: ${businessType}\nOffer: ${topic}`;
+  // Step 1 — extract intent from natural language input
+  const rawInput = [businessType, topic].filter(Boolean).join(' — ');
+  const intent = await extractIntent(rawInput, axios, baseUrl, apiKey);
+  console.log('[captions] Extracted intent:', JSON.stringify(intent));
+
+  // Step 2 — build caption prompt from extracted data
+  const businessLine = [
+    intent.businessName && `Business Name: ${intent.businessName}`,
+    `Business Type: ${intent.businessType || businessType || 'general'}`,
+    `Offer: ${intent.offer || topic}`,
+    intent.audience && `Target Audience: ${intent.audience}`,
+    intent.instructions && `Special Instructions: ${intent.instructions}`,
+  ].filter(Boolean).join('\n');
+
+  const userMessage = `Generate 5 captions for:\n${businessLine}`;
 
   const response = await axios.post(
     `${baseUrl}/chat/completions`,
