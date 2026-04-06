@@ -1,0 +1,469 @@
+{
+  "post_types": {
+    "offer_discount": {
+      "name": "Offer / Discount",
+      "category": "SALES",
+      "intent": "direct_conversion",
+      "best_formats": ["single", "story", "carousel"],
+      "best_platforms": ["instagram", "facebook", "whatsapp"],
+      "caption_rules": {
+        "hook": "price_anchor or urgency",
+        "must_include": ["exact price", "deadline", "CTA"],
+        "avoid": ["vague language", "no deadline"],
+        "max_chars": 150,
+        "cta_type": "DM_keyword"
+      },
+      "carousel_structure": {
+        "slide_1": "Hook — Problem or FOMO",
+        "slide_2": "Offer details + exact price",
+        "slide_3": "Social proof / why trust us",
+        "slide_4": "CTA with deadline"
+      },
+      "hinglish_triggers": ["sirf aaj", "limited time", "offer khatam", "slots bhar rahe hain", "abhi lelo"]
+    },
+
+    "flash_sale": {
+      "name": "Flash Sale",
+      "category": "URGENCY",
+      "intent": "immediate_conversion",
+      "best_formats": ["story", "single"],
+      "best_platforms": ["instagram", "whatsapp"],
+      "caption_rules": {
+        "hook": "extreme_urgency",
+        "must_include": ["countdown or exact expiry time", "exact discount percentage or price", "scarcity signal"],
+        "avoid": ["soft language", "maybe/might", "vague timing"],
+        "max_chars": 100,
+        "cta_type": "immediate_action"
+      },
+      "carousel_structure": null,
+      "hinglish_triggers": ["sirf 2 ghante", "aaj raat tak", "last chance", "abhi nahi toh kabhi nahi", "24 ghante ki deal"]
+    },
+
+    "product_launch": {
+      "name": "New Product / Service Launch",
+      "category": "SALES",
+      "intent": "awareness_plus_sales",
+      "best_formats": ["carousel", "reel_cover", "single"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "curiosity or announcement",
+        "must_include": ["what is new", "why it is different", "launch offer or early bird"],
+        "avoid": ["too much info at once", "listing features without benefit"],
+        "max_chars": 180,
+        "cta_type": "early_bird"
+      },
+      "carousel_structure": {
+        "slide_1": "Teaser — Kuch naya aa raha hai",
+        "slide_2": "The reveal — what it is",
+        "slide_3": "Why it is different",
+        "slide_4": "Early bird offer",
+        "slide_5": "CTA — book / enquire"
+      },
+      "hinglish_triggers": ["finally aa gaya", "introducing", "pehli baar", "naya launch", "brand new"]
+    },
+
+    "festival_post": {
+      "name": "Festival / Occasion",
+      "category": "ENGAGEMENT",
+      "intent": "brand_awareness_plus_engagement",
+      "best_formats": ["single", "story"],
+      "best_platforms": ["instagram", "facebook", "whatsapp"],
+      "caption_rules": {
+        "hook": "festival_greeting",
+        "must_include": ["festival name", "brand name", "warm wishes"],
+        "avoid": ["hard sell", "discount in same post"],
+        "max_chars": 120,
+        "cta_type": "engagement_question"
+      },
+      "carousel_structure": null,
+      "hinglish_triggers": ["tyohaar", "mubarak", "shubhkamnayein", "sabko pyaar", "mil ke manayein"]
+    },
+
+    "seasonal_promo": {
+      "name": "Seasonal Promotion",
+      "category": "SALES",
+      "intent": "seasonal_conversion",
+      "best_formats": ["single", "carousel", "story"],
+      "best_platforms": ["instagram", "facebook", "whatsapp"],
+      "caption_rules": {
+        "hook": "season_relevance",
+        "must_include": ["season or event name", "special price or deal", "limited time angle"],
+        "avoid": ["generic greetings without offer", "no deadline"],
+        "max_chars": 160,
+        "cta_type": "seasonal_CTA"
+      },
+      "carousel_structure": {
+        "slide_1": "Season hook",
+        "slide_2": "Seasonal offer details",
+        "slide_3": "CTA"
+      },
+      "hinglish_triggers": ["is season mein", "winter special", "summer offer", "monsoon deal", "tyohaar special"]
+    },
+
+    "testimonial": {
+      "name": "Customer Review / Testimonial",
+      "category": "SOCIAL_PROOF",
+      "intent": "trust_building",
+      "best_formats": ["single", "carousel"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "customer_result",
+        "must_include": ["real name or first name", "specific result or transformation", "emotional reaction"],
+        "avoid": ["fake sounding praise", "generic words like amazing or wonderful"],
+        "max_chars": 200,
+        "cta_type": "social_proof_CTA"
+      },
+      "carousel_structure": {
+        "slide_1": "Customer quote — the result",
+        "slide_2": "Before situation",
+        "slide_3": "After result with specifics",
+        "slide_4": "Your turn — CTA"
+      },
+      "hinglish_triggers": ["sach mein kaam kiya", "khud dekha", "unka experience", "real customer", "yeh result mila"]
+    },
+
+    "before_after": {
+      "name": "Before / After Transformation",
+      "category": "SOCIAL_PROOF",
+      "intent": "conversion",
+      "best_formats": ["carousel", "single"],
+      "best_platforms": ["instagram"],
+      "caption_rules": {
+        "hook": "transformation_story",
+        "must_include": ["emotional journey", "specific result with detail", "time taken for transformation"],
+        "avoid": ["body shaming language", "unrealistic claims", "medical language"],
+        "max_chars": 200,
+        "cta_type": "book_now"
+      },
+      "carousel_structure": {
+        "slide_1": "Before — the struggle",
+        "slide_2": "The process (1-2 slides)",
+        "slide_3": "After — the result",
+        "slide_4": "CTA — your transformation awaits"
+      },
+      "hinglish_triggers": ["pehle aur baad", "yeh badlaav dekho", "transformation", "result aaya", "khud dekho farq"]
+    },
+
+    "educational_tips": {
+      "name": "Tips & Tricks",
+      "category": "EDUCATIONAL",
+      "intent": "authority_building",
+      "best_formats": ["carousel", "single"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "curiosity or problem statement",
+        "must_include": ["numbered tips (3-5)", "practical and actionable advice", "save-worthy insight"],
+        "avoid": ["too technical language", "boring listicle without context", "generic advice"],
+        "max_chars": 250,
+        "cta_type": "save_and_share"
+      },
+      "carousel_structure": {
+        "slide_1": "Hook — Problem or question that makes them swipe",
+        "slide_2": "Tip 1 with context",
+        "slide_3": "Tip 2 with context",
+        "slide_4": "Tip 3 with context",
+        "slide_5": "Bonus tip or summary",
+        "slide_6": "CTA — save this + follow"
+      },
+      "hinglish_triggers": ["yeh jaante ho", "galti mat karna", "pro tip", "secret hai yeh", "save kar lo"]
+    },
+
+    "how_it_works": {
+      "name": "How It Works / Process",
+      "category": "EDUCATIONAL",
+      "intent": "objection_removal",
+      "best_formats": ["carousel", "reel_cover"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "simplicity hook — itna aasaan hai",
+        "must_include": ["step-by-step process", "time or effort required", "end result"],
+        "avoid": ["jargon", "complicated language", "too many steps"],
+        "max_chars": 180,
+        "cta_type": "start_now"
+      },
+      "carousel_structure": {
+        "slide_1": "Hook — Kya yeh mushkil lagta hai? (It is not)",
+        "slide_2": "Step 1",
+        "slide_3": "Step 2",
+        "slide_4": "Step 3",
+        "slide_5": "Result + CTA"
+      },
+      "hinglish_triggers": ["step by step", "itna simple hai", "bas itna karo", "3 steps mein", "kaise kaam karta hai"]
+    },
+
+    "brand_story": {
+      "name": "Brand Story / About Us",
+      "category": "AWARENESS",
+      "intent": "brand_connection",
+      "best_formats": ["carousel", "single"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "founder_journey or why_we_started",
+        "must_include": ["why the business started", "who it is for", "what makes it personal"],
+        "avoid": ["corporate tone", "boasting without story", "generic mission statement"],
+        "max_chars": 300,
+        "cta_type": "follow_for_more"
+      },
+      "carousel_structure": {
+        "slide_1": "The problem we noticed",
+        "slide_2": "Our story — how it started",
+        "slide_3": "What we stand for",
+        "slide_4": "Our promise to you",
+        "slide_5": "Meet the team / founder"
+      },
+      "hinglish_triggers": ["humaari kahani", "yeh sab shuru kiya kyunki", "ek chhoti si dukaan se", "hamara sapna", "aapke liye banaya"]
+    },
+
+    "behind_the_scenes": {
+      "name": "Behind the Scenes",
+      "category": "ENGAGEMENT",
+      "intent": "trust_plus_relatability",
+      "best_formats": ["single", "carousel", "reel_cover"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "raw_authentic_moment",
+        "must_include": ["honest process detail", "human element", "unexpected or interesting fact"],
+        "avoid": ["overly polished language", "hiding imperfections", "corporate speak"],
+        "max_chars": 200,
+        "cta_type": "comment_reaction"
+      },
+      "carousel_structure": {
+        "slide_1": "The thing people never see",
+        "slide_2": "The process in action",
+        "slide_3": "A raw honest moment",
+        "slide_4": "The final result"
+      },
+      "hinglish_triggers": ["parde ke peeche", "koi nahi jaanta", "asal mein aise hota hai", "yeh dekho zara", "sach batayein toh"]
+    },
+
+    "team_spotlight": {
+      "name": "Team / Staff Spotlight",
+      "category": "TRUST",
+      "intent": "humanise_brand",
+      "best_formats": ["single", "carousel"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "personal_story_of_team_member",
+        "must_include": ["name and role", "one personal detail", "why they love what they do"],
+        "avoid": ["overly formal bio", "listing qualifications only"],
+        "max_chars": 180,
+        "cta_type": "welcome_comment"
+      },
+      "carousel_structure": {
+        "slide_1": "Meet [Name]",
+        "slide_2": "Their role and expertise",
+        "slide_3": "A personal fun fact",
+        "slide_4": "Why they joined us"
+      },
+      "hinglish_triggers": ["hamare team se miliye", "yeh hain humare", "inse miliye", "humara hero", "team ka dum"]
+    },
+
+    "giveaway": {
+      "name": "Giveaway / Contest",
+      "category": "GROWTH",
+      "intent": "follower_growth_plus_engagement",
+      "best_formats": ["single", "carousel"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "win_announcement",
+        "must_include": ["exact prize with value", "clear entry steps (max 3)", "deadline", "winner announcement date"],
+        "avoid": ["too complicated entry process", "unclear prize value", "no deadline"],
+        "max_chars": 250,
+        "cta_type": "tag_and_follow"
+      },
+      "carousel_structure": {
+        "slide_1": "The prize announcement",
+        "slide_2": "How to enter (3 simple steps)",
+        "slide_3": "Terms and deadline",
+        "slide_4": "Share and tag"
+      },
+      "hinglish_triggers": ["free mein jeet lo", "sirf follow karo", "tag karo aur jeeto", "winner announce hoga", "lucky draw"]
+    },
+
+    "poll_question": {
+      "name": "Poll / Engagement Question",
+      "category": "ENGAGEMENT",
+      "intent": "engagement_plus_research",
+      "best_formats": ["story", "single"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "relatable_debate_or_choice",
+        "must_include": ["two clear options", "brand relevance", "fun or relatable framing"],
+        "avoid": ["boring generic questions", "questions with obvious answers", "controversial topics"],
+        "max_chars": 80,
+        "cta_type": "comment_A_or_B"
+      },
+      "carousel_structure": null,
+      "hinglish_triggers": ["aap kaun hain", "team A ya team B", "yeh wala ya woh wala", "batao toh", "haan ya na"]
+    },
+
+    "meme_entertainment": {
+      "name": "Meme / Relatable Content",
+      "category": "ENTERTAINMENT",
+      "intent": "viral_reach_plus_brand_recall",
+      "best_formats": ["single", "reel_cover"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "relatable_situation",
+        "must_include": ["genuine humor", "brand connection (subtle)", "light CTA or engagement hook"],
+        "avoid": ["offensive content", "controversial topics", "forced hard sell"],
+        "max_chars": 80,
+        "cta_type": "tag_someone"
+      },
+      "carousel_structure": null,
+      "hinglish_triggers": ["yaar yeh toh main hoon", "kaun kaun relate karta hai", "tag karo usse", "sach bol raha hoon", "aisi feeling"]
+    },
+
+    "local_targeting": {
+      "name": "Local Business / Area Post",
+      "category": "LOCAL",
+      "intent": "local_reach",
+      "best_formats": ["single", "story"],
+      "best_platforms": ["instagram", "facebook", "whatsapp"],
+      "caption_rules": {
+        "hook": "location_pride",
+        "must_include": ["city or area name", "nearby landmark or reference", "local community angle"],
+        "avoid": ["generic national language", "no local references"],
+        "max_chars": 150,
+        "cta_type": "visit_us"
+      },
+      "carousel_structure": null,
+      "hinglish_triggers": ["aapke sheher mein", "door nahi hai", "pass mein hi hai", "local favourite", "seedha aao"]
+    },
+
+    "restock_alert": {
+      "name": "Restock / Back in Stock Alert",
+      "category": "SALES",
+      "intent": "immediate_purchase",
+      "best_formats": ["story", "single"],
+      "best_platforms": ["instagram", "whatsapp", "facebook"],
+      "caption_rules": {
+        "hook": "finally_it_is_back",
+        "must_include": ["product name", "limited quantity signal", "where to buy / DM keyword"],
+        "avoid": ["no urgency", "vague availability"],
+        "max_chars": 100,
+        "cta_type": "DM_to_reserve"
+      },
+      "carousel_structure": null,
+      "hinglish_triggers": ["wapas aa gaya", "stock aa gaya", "thoda hi bacha hai", "pehle aao pehle pao", "finally back"]
+    },
+
+    "announcement": {
+      "name": "General Announcement",
+      "category": "AWARENESS",
+      "intent": "inform_plus_excitement",
+      "best_formats": ["single", "story"],
+      "best_platforms": ["instagram", "facebook", "whatsapp"],
+      "caption_rules": {
+        "hook": "big_news_energy",
+        "must_include": ["what is the news", "when it happens", "why it matters to audience"],
+        "avoid": ["burying the news", "vague teaser with no payoff"],
+        "max_chars": 150,
+        "cta_type": "save_and_share"
+      },
+      "carousel_structure": null,
+      "hinglish_triggers": ["badi khabar", "sun lo", "announcing", "yeh aa raha hai", "mark the date"]
+    },
+
+    "collaboration": {
+      "name": "Collaboration / Partnership",
+      "category": "GROWTH",
+      "intent": "cross_audience_reach",
+      "best_formats": ["single", "carousel"],
+      "best_platforms": ["instagram", "facebook"],
+      "caption_rules": {
+        "hook": "excited_introduction",
+        "must_include": ["both brand names", "what the collab offers", "why it is special"],
+        "avoid": ["one brand overshadowing other", "vague collab with no clear offer"],
+        "max_chars": 200,
+        "cta_type": "tag_and_visit"
+      },
+      "carousel_structure": {
+        "slide_1": "The collab announcement",
+        "slide_2": "What Brand A brings",
+        "slide_3": "What Brand B brings",
+        "slide_4": "Together — the offer",
+        "slide_5": "CTA"
+      },
+      "hinglish_triggers": ["mil ke kiya hai", "dono ne saath aakar", "special collab", "ek nayi shuruaat", "dream team"]
+    },
+
+    "referral_program": {
+      "name": "Referral / Refer & Earn",
+      "category": "GROWTH",
+      "intent": "word_of_mouth_growth",
+      "best_formats": ["single", "story"],
+      "best_platforms": ["instagram", "whatsapp", "facebook"],
+      "caption_rules": {
+        "hook": "earn_while_you_share",
+        "must_include": ["exact reward for referrer", "how to refer (simple steps)", "what referred friend gets"],
+        "avoid": ["complicated multi-step process", "vague rewards"],
+        "max_chars": 180,
+        "cta_type": "share_link_or_code"
+      },
+      "carousel_structure": {
+        "slide_1": "You refer — you earn",
+        "slide_2": "How it works (3 steps)",
+        "slide_3": "Your reward + friend's reward",
+        "slide_4": "CTA — share now"
+      },
+      "hinglish_triggers": ["dost ko bulao earning karo", "refer karke kamao", "dono ko milega", "share karo benefit lo", "apne dost ko batao"]
+    }
+  },
+
+  "formats": {
+    "single": {
+      "dimensions": "1080x1080",
+      "ratio": "1:1",
+      "platforms": ["instagram", "facebook"],
+      "max_text_lines": 3,
+      "design_tip": "One strong visual + one clear message"
+    },
+    "carousel": {
+      "dimensions": "1080x1080",
+      "ratio": "1:1",
+      "min_slides": 3,
+      "max_slides": 10,
+      "platforms": ["instagram", "facebook"],
+      "design_tip": "Story arc across slides — first slide must make them swipe"
+    },
+    "story": {
+      "dimensions": "1080x1920",
+      "ratio": "9:16",
+      "platforms": ["instagram", "facebook", "whatsapp"],
+      "max_text_lines": 4,
+      "design_tip": "Full screen impact — text in safe zone center"
+    },
+    "reel_cover": {
+      "dimensions": "1080x1920",
+      "ratio": "9:16",
+      "platforms": ["instagram"],
+      "max_text_lines": 2,
+      "design_tip": "Bold text + face or product — hook in first frame"
+    }
+  },
+
+  "platforms": {
+    "instagram": {
+      "best_post_times": ["8am", "12pm", "7pm"],
+      "max_caption_chars": 2200,
+      "max_hashtags": 30,
+      "optimal_hashtags": 5,
+      "best_formats": ["reel", "carousel", "single"]
+    },
+    "facebook": {
+      "best_post_times": ["9am", "1pm", "3pm"],
+      "max_caption_chars": 63206,
+      "max_hashtags": 10,
+      "optimal_hashtags": 3,
+      "best_formats": ["single", "carousel", "video"]
+    },
+    "whatsapp": {
+      "best_post_times": ["10am", "6pm", "9pm"],
+      "max_caption_chars": 700,
+      "max_hashtags": 0,
+      "optimal_hashtags": 0,
+      "best_formats": ["single", "story"]
+    }
+  }
+}

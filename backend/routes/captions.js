@@ -5,41 +5,56 @@ function getClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
-async function generateSmartCaptions(brandData, postType, offer, platform) {
+async function generateSmartCaptions(brandData, postType, offer, platform, format = 'single') {
   const client = getClient();
 
   const ctx = getOptimalCaptionConfig(
-    platform || 'instagram_feed',
+    platform     || 'instagram',
     brandData?.category || 'general',
-    postType  || 'offer'
+    postType     || 'offer_discount',
+    format
   );
+
+  // Build carousel section only when format is carousel and structure exists
+  const carouselSection = (format === 'carousel' && ctx.carouselStructure)
+    ? `\nCarousel Slide Structure (design each slide for this arc):\n${
+        Object.entries(ctx.carouselStructure)
+          .map(([slide, desc]) => `  ${slide}: ${desc}`)
+          .join('\n')
+      }`
+    : '';
+
+  const hinglishSection = ctx.hinglishTriggers.length
+    ? `\nHinglish trigger phrases to use naturally: ${ctx.hinglishTriggers.join(', ')}`
+    : '';
 
   const contextBlock = `
 Caption Context Config (follow strictly):
+- Post type: ${ctx.postTypeName} (${ctx.postTypeCategory})
+- Format: ${format} | Dimensions: ${ctx.formatDimensions}
 - Platform character range: ${ctx.minChars}–${ctx.maxChars} chars per caption
 - Style: ${ctx.style}
 - Tone: ${ctx.tone}
 - Emotion trigger: ${ctx.emotionTrigger}
-- Structure: ${ctx.structureHint}
 - Must include: ${ctx.mustInclude.join(', ')}
 - Avoid: ${ctx.avoid.join(', ')}
 - CTA type: ${ctx.ctaType}
 - Hashtags per caption: ${ctx.hashtagCount}
-- Time of day: ${ctx.timeContext.timeOfDay} | Day vibe: ${ctx.timeContext.dayVibe}${ctx.timeContext.festivalHint ? '\n- Festival angle: ' + ctx.timeContext.festivalHint : ''}`;
+- Time of day: ${ctx.timeContext.timeOfDay} | Day vibe: ${ctx.timeContext.dayVibe}${ctx.timeContext.festivalHint ? '\n- Festival angle: ' + ctx.timeContext.festivalHint : ''}${carouselSection}${hinglishSection}`;
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2000,
     system: `You are Automo AI — India's smartest social media content creator for local businesses.
 You deeply understand Indian culture, festivals, and the language of small business owners.
-Always include relevant emojis, a clear call-to-action, and 3-5 hashtags per caption.
+Always include relevant emojis, a clear call-to-action, and hashtags per the config.
 Return ONLY a valid JSON array — no markdown, no extra text, nothing before or after the array.`,
     messages: [{
       role: 'user',
       content: `Brand: ${brandData?.name || 'My Business'}
 Business Type: ${brandData?.category || 'general'}
-Platform: ${platform || 'instagram'}
-Post Type: ${postType || 'offer'}
+Platform: ${platform || 'instagram'} | Format: ${format}
+Post Type: ${postType || 'offer_discount'}
 Offer/Info: ${offer}
 Brand Vibe: ${brandData?.mood || 'professional and friendly'}
 ${contextBlock}
@@ -232,7 +247,7 @@ Return ONLY this JSON (no explanation, no markdown):
   }
 }
 
-async function generateCaptionsForUI(businessType, topic, platform = 'instagram_feed', postType = 'offer') {
+async function generateCaptionsForUI(businessType, topic, platform = 'instagram', postType = 'offer_discount', format = 'single') {
   const axios = require('axios');
   const baseUrl = process.env.AICREDITS_BASE_URL;
   const apiKey  = process.env.AICREDITS_API_KEY;
@@ -246,28 +261,44 @@ async function generateCaptionsForUI(businessType, topic, platform = 'instagram_
 
   // Step 2 — get optimal context config
   const resolvedBusinessType = intent.businessType || businessType || 'general';
-  const ctx = getOptimalCaptionConfig(platform, resolvedBusinessType, postType);
-  console.log('[captions] Context config:', JSON.stringify({ platform, resolvedBusinessType, postType, minChars: ctx.minChars, maxChars: ctx.maxChars, style: ctx.style, ctaType: ctx.ctaType }));
+  const ctx = getOptimalCaptionConfig(platform, resolvedBusinessType, postType, format);
+  console.log('[captions] Context config:', JSON.stringify({
+    platform, format, resolvedBusinessType, postType,
+    minChars: ctx.minChars, maxChars: ctx.maxChars,
+    style: ctx.style, ctaType: ctx.ctaType, postTypeName: ctx.postTypeName,
+  }));
 
-  // Step 3 — build caption prompt from extracted data + context
+  // Step 3 — build carousel section if applicable
+  const carouselLines = (format === 'carousel' && ctx.carouselStructure)
+    ? ['', 'Carousel Slide Arc (follow this structure):', ...Object.entries(ctx.carouselStructure).map(([s, d]) => `  ${s}: ${d}`)]
+    : [];
+
+  const hinglishLine = ctx.hinglishTriggers.length
+    ? [`Hinglish triggers (use naturally): ${ctx.hinglishTriggers.join(', ')}`]
+    : [];
+
+  // Step 4 — build prompt
   const businessLine = [
     intent.businessName && `Business Name: ${intent.businessName}`,
     `Business Type: ${resolvedBusinessType}`,
-    `Offer: ${intent.offer || topic}`,
+    `Offer / Topic: ${intent.offer || topic}`,
     intent.audience && `Target Audience: ${intent.audience}`,
     intent.instructions && `Special Instructions: ${intent.instructions}`,
     ``,
     `Caption Context (follow strictly):`,
+    `- Post type: ${ctx.postTypeName} (${ctx.postTypeCategory})`,
+    `- Format: ${format} | Dimensions: ${ctx.formatDimensions}`,
     `- Character range: ${ctx.minChars}–${ctx.maxChars} chars per caption`,
     `- Style: ${ctx.style}`,
     `- Tone: ${ctx.tone}`,
     `- Emotion trigger: ${ctx.emotionTrigger}`,
-    `- Structure: ${ctx.structureHint}`,
     `- Must include: ${ctx.mustInclude.join(', ')}`,
     `- Avoid: ${ctx.avoid.join(', ')}`,
     `- CTA type: ${ctx.ctaType}`,
     `- Hashtags per caption: ${ctx.hashtagCount}`,
     ctx.timeContext.festivalHint && `- Festival angle: ${ctx.timeContext.festivalHint}`,
+    ...carouselLines,
+    ...hinglishLine,
   ].filter(Boolean).join('\n');
 
   const userMessage = `Generate 5 captions for:\n${businessLine}`;

@@ -1,16 +1,28 @@
 // Caption Context Engine
-// Determines optimal caption settings based on platform, business type, post type, and time.
+// Merges platform + format + business type + post type + time into one config object
+// that drives Claude caption generation.
 
-const PLATFORM_RULES = {
-  instagram_feed:  { minChars: 138, maxChars: 150, hashtagCount: 5 },
-  instagram_reel:  { minChars: 80,  maxChars: 100, hashtagCount: 4 },
-  instagram_story: { minChars: 50,  maxChars: 70,  hashtagCount: 2 },
-  facebook:        { minChars: 200, maxChars: 300, hashtagCount: 3 },
-  whatsapp_status: { minChars: 100, maxChars: 120, hashtagCount: 0 },
-  twitter:         { minChars: 240, maxChars: 260, hashtagCount: 2 },
-  twitter_x:       { minChars: 240, maxChars: 260, hashtagCount: 2 },
+const POST_TYPES = require('../data/postTypes.json');
+
+// ─── Platform × Format → character limits ────────────────────────────────────
+const PLATFORM_FORMAT_RULES = {
+  instagram_feed:    { minChars: 138, maxChars: 150, hashtagCount: 5 },
+  instagram_carousel:{ minChars: 138, maxChars: 150, hashtagCount: 5 },
+  instagram_reel:    { minChars: 80,  maxChars: 100, hashtagCount: 4 },
+  instagram_story:   { minChars: 50,  maxChars: 70,  hashtagCount: 2 },
+  instagram_single:  { minChars: 138, maxChars: 150, hashtagCount: 5 },
+  facebook:          { minChars: 200, maxChars: 300, hashtagCount: 3 },
+  facebook_carousel: { minChars: 200, maxChars: 300, hashtagCount: 3 },
+  facebook_single:   { minChars: 200, maxChars: 300, hashtagCount: 3 },
+  facebook_story:    { minChars: 100, maxChars: 160, hashtagCount: 2 },
+  whatsapp_status:   { minChars: 100, maxChars: 120, hashtagCount: 0 },
+  whatsapp_story:    { minChars: 100, maxChars: 120, hashtagCount: 0 },
+  whatsapp_single:   { minChars: 100, maxChars: 120, hashtagCount: 0 },
+  twitter:           { minChars: 240, maxChars: 260, hashtagCount: 2 },
+  twitter_x:         { minChars: 240, maxChars: 260, hashtagCount: 2 },
 };
 
+// ─── Business type → creative rules ──────────────────────────────────────────
 const BUSINESS_RULES = {
   salon: {
     style: 'emotional_transformation',
@@ -70,7 +82,7 @@ const BUSINESS_RULES = {
   },
 };
 
-// Normalise business type: map frontend keys to BUSINESS_RULES keys
+// Normalise business type string → BUSINESS_RULES key
 const BUSINESS_ALIASES = {
   hair_beauty_salon: 'salon',
   beauty_salon:      'salon',
@@ -89,68 +101,46 @@ const BUSINESS_ALIASES = {
   school:            'coaching',
 };
 
-const POST_TYPE_RULES = {
-  offer: {
-    emotionTrigger: 'FOMO + urgency',
-    structureHint: 'lead with problem, reveal offer as relief, hard deadline in CTA',
-    mustInclude: ['exact discount or price', 'expiry/scarcity signal'],
-    avoid: ['vague "special offer"'],
-  },
-  new_launch: {
-    emotionTrigger: 'curiosity + excitement',
-    structureHint: 'tease before reveal, build anticipation, curiosity CTA',
-    mustInclude: ['what is new', 'why it matters to reader'],
-    avoid: ['listing features without benefit'],
-  },
-  event: {
-    emotionTrigger: 'FOMO + date urgency',
-    structureHint: 'paint the event scene, give exact date/time, "last X seats" pressure',
-    mustInclude: ['specific date', 'what happens there'],
-    avoid: ['vague "join us" with no date'],
-  },
-  daily_post: {
-    emotionTrigger: 'story + engagement',
-    structureHint: 'relatable moment → story → question to audience at end',
-    mustInclude: ['engagement question or poll hook', 'relatable Indian daily life moment'],
-    avoid: ['hard sell', 'urgency language'],
-  },
-  review: {
-    emotionTrigger: 'social proof + trust',
-    structureHint: 'quote or paraphrase the result, add specificity, invite others to experience',
-    mustInclude: ['specific customer outcome', 'name/role if possible', 'trust signal'],
-    avoid: ['generic "great service"', 'self-praise without evidence'],
-  },
-  motivation: {
-    emotionTrigger: 'inspiration + action',
-    structureHint: 'relatable pain → reframe → specific action step',
-    mustInclude: ['one clear insight', 'personal tone'],
-    avoid: ['clichéd quotes', 'preachy tone'],
-  },
+// Fallback mapping for old postType keys → new postTypes.json keys
+const POST_TYPE_ALIASES = {
+  offer:       'offer_discount',
+  discount:    'offer_discount',
+  new_launch:  'product_launch',
+  launch:      'product_launch',
+  event:       'announcement',
+  daily_post:  'behind_the_scenes',
+  review:      'testimonial',
+  motivation:  'educational_tips',
+  tips:        'educational_tips',
+  meme:        'meme_entertainment',
+  bts:         'behind_the_scenes',
+  collab:      'collaboration',
+  referral:    'referral_program',
 };
 
+// ─── Time context ─────────────────────────────────────────────────────────────
 function getTimeContext(now = new Date()) {
   const hour  = now.getHours();
-  const day   = now.getDay();   // 0=Sun, 1=Mon … 6=Sat
-  const month = now.getMonth(); // 0-indexed
+  const day   = now.getDay();
+  const month = now.getMonth();
 
   const timeOfDay = hour < 11 ? 'morning' : hour < 15 ? 'afternoon' : hour < 19 ? 'evening' : 'night';
 
   const dayContext = {
-    0: { vibe: 'sunday_relaxed',  hint: 'Sunday laziness → fun treat, self-care energy' },
-    1: { vibe: 'monday_hustle',   hint: 'Monday motivation → new week, fresh start, conquer energy' },
-    2: { vibe: 'midweek_steady',  hint: 'Tuesday steady grind — relatable mid-week content' },
-    3: { vibe: 'hump_day',        hint: 'Wednesday — halfway there, small reward energy' },
-    4: { vibe: 'thursday_almost', hint: 'Thursday anticipation — weekend is almost here' },
-    5: { vibe: 'friday_vibe',     hint: 'Friday celebration — weekend plans, treat yourself energy' },
-    6: { vibe: 'saturday_outing', hint: 'Saturday outing — family plans, go out energy' },
+    0: { vibe: 'sunday_relaxed',   hint: 'Sunday laziness → fun treat, self-care energy' },
+    1: { vibe: 'monday_hustle',    hint: 'Monday motivation → new week, fresh start, conquer energy' },
+    2: { vibe: 'midweek_steady',   hint: 'Tuesday steady grind — relatable mid-week content' },
+    3: { vibe: 'hump_day',         hint: 'Wednesday — halfway there, small reward energy' },
+    4: { vibe: 'thursday_almost',  hint: 'Thursday anticipation — weekend is almost here' },
+    5: { vibe: 'friday_vibe',      hint: 'Friday celebration — weekend plans, treat yourself energy' },
+    6: { vibe: 'saturday_outing',  hint: 'Saturday outing — family plans, go out energy' },
   }[day];
 
-  // Rough Indian festival seasons
   let festivalHint = null;
-  if (month === 9 || month === 10) festivalHint = 'Navratri/Diwali season — festive warmth, gift/celebration angle';
-  if (month === 2)                 festivalHint = 'Holi season — color, joy, celebration angle';
-  if (month === 11 || month === 0) festivalHint = 'New Year / Christmas season — resolution, new beginning angle';
-  if (month === 7 || month === 8)  festivalHint = 'Independence Day / Raksha Bandhan season — patriotic or sibling love angle';
+  if (month === 9  || month === 10) festivalHint = 'Navratri/Diwali season — festive warmth, gift/celebration angle';
+  if (month === 2)                  festivalHint = 'Holi season — color, joy, celebration angle';
+  if (month === 11 || month === 0)  festivalHint = 'New Year / Christmas season — resolution, new beginning angle';
+  if (month === 7  || month === 8)  festivalHint = 'Independence Day / Raksha Bandhan season — patriotic or sibling love angle';
 
   const timeOfDayHint = {
     morning:   'Fresh start energy — chai, new day, productivity',
@@ -162,43 +152,71 @@ function getTimeContext(now = new Date()) {
   return { timeOfDay, dayContext, festivalHint, timeOfDayHint };
 }
 
-function normaliseKey(raw) {
-  if (!raw) return null;
+// ─── Key normalisers ──────────────────────────────────────────────────────────
+function normaliseBusinessKey(raw) {
+  if (!raw) return 'general';
   const key = raw.toLowerCase().replace(/[\s/&-]+/g, '_');
-  return BUSINESS_ALIASES[key] || key;
+  return BUSINESS_ALIASES[key] || (BUSINESS_RULES[key] ? key : 'general');
 }
 
-/**
- * Returns the optimal caption config for a given context.
- *
- * @param {string} platform     - e.g. 'instagram_reel', 'facebook', 'whatsapp_status'
- * @param {string} businessType - e.g. 'salon', 'gym', 'cafe'
- * @param {string} postType     - e.g. 'offer', 'daily_post', 'motivation'
- * @param {Date}   time         - defaults to now
- * @returns {{
- *   minChars: number, maxChars: number,
- *   style: string, tone: string,
- *   emotionTrigger: string, structureHint: string,
- *   mustInclude: string[], avoid: string[],
- *   ctaType: string, hashtagCount: number,
- *   timeContext: { timeOfDay: string, dayVibe: string, festivalHint: string|null }
- * }}
- */
-function getOptimalCaptionConfig(platform = 'instagram_feed', businessType = 'general', postType = 'offer', time = new Date()) {
-  const platformKey = platform.toLowerCase().replace(/\s+/g, '_');
-  const businessKey = normaliseKey(businessType);
-  const postKey     = postType.toLowerCase().replace(/[\s-]+/g, '_');
+function normalisePostTypeKey(raw) {
+  if (!raw) return 'offer_discount';
+  const key = raw.toLowerCase().replace(/[\s/-]+/g, '_');
+  if (POST_TYPES.post_types[key]) return key;
+  return POST_TYPE_ALIASES[key] || 'offer_discount';
+}
 
-  const platformRule = PLATFORM_RULES[platformKey]  || PLATFORM_RULES.instagram_feed;
-  const businessRule = BUSINESS_RULES[businessKey]  || BUSINESS_RULES.general;
-  const postTypeRule = POST_TYPE_RULES[postKey]      || POST_TYPE_RULES.daily_post;
-  const timeCtx      = getTimeContext(time);
+function normalisePlatformKey(platform, format) {
+  const p = (platform || 'instagram').toLowerCase();
+  const f = (format   || 'single').toLowerCase();
+
+  // Build compound key first, fall back to platform-only
+  const compound = `${p}_${f}`;
+  if (PLATFORM_FORMAT_RULES[compound]) return compound;
+  if (PLATFORM_FORMAT_RULES[p])        return p;
+  return 'instagram_feed';
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
+/**
+ * Returns the full optimal caption config for a given context.
+ *
+ * @param {string} platform     - 'instagram' | 'facebook' | 'whatsapp'
+ * @param {string} businessType - 'salon' | 'gym' | 'cafe' | etc.
+ * @param {string} postType     - key from postTypes.json, e.g. 'educational_tips'
+ * @param {string} format       - 'single' | 'carousel' | 'story' | 'reel_cover'
+ * @param {Date}   time         - defaults to now
+ */
+function getOptimalCaptionConfig(
+  platform     = 'instagram',
+  businessType = 'general',
+  postType     = 'offer_discount',
+  format       = 'single',
+  time         = new Date()
+) {
+  const platformKey  = normalisePlatformKey(platform, format);
+  const businessKey  = normaliseBusinessKey(businessType);
+  const postTypeKey  = normalisePostTypeKey(postType);
+
+  const platformRule  = PLATFORM_FORMAT_RULES[platformKey] || PLATFORM_FORMAT_RULES.instagram_feed;
+  const businessRule  = BUSINESS_RULES[businessKey]        || BUSINESS_RULES.general;
+  const postTypeData  = POST_TYPES.post_types[postTypeKey] || POST_TYPES.post_types.offer_discount;
+  const captionRules  = postTypeData.caption_rules;
+  const formatData    = POST_TYPES.formats[format]         || POST_TYPES.formats.single;
+  const platformData  = POST_TYPES.platforms[platform.toLowerCase()] || POST_TYPES.platforms.instagram;
+  const timeCtx       = getTimeContext(time);
 
   // Merge mustInclude / avoid from business + post type (deduplicated)
-  const mustInclude = [...new Set([...businessRule.mustInclude, ...postTypeRule.mustInclude])];
-  const avoid       = [...new Set([...businessRule.avoid,       ...postTypeRule.avoid])];
+  const mustInclude = [...new Set([
+    ...businessRule.mustInclude,
+    ...(captionRules.must_include || []),
+  ])];
+  const avoid = [...new Set([
+    ...businessRule.avoid,
+    ...(captionRules.avoid || []),
+  ])];
 
-  // Combine tone hints — filter nulls
+  // Combine tone hints
   const toneHints = [
     businessRule.tone,
     timeCtx.dayContext.hint,
@@ -207,16 +225,37 @@ function getOptimalCaptionConfig(platform = 'instagram_feed', businessType = 'ge
   ].filter(Boolean);
 
   return {
-    minChars:       platformRule.minChars,
-    maxChars:       platformRule.maxChars,
-    style:          businessRule.style,
-    tone:           toneHints.join(' | '),
-    emotionTrigger: postTypeRule.emotionTrigger,
-    structureHint:  postTypeRule.structureHint,
+    // Character limits
+    minChars:          platformRule.minChars,
+    maxChars:          platformRule.maxChars,
+
+    // Creative rules
+    style:             businessRule.style,
+    tone:              toneHints.join(' | '),
+    emotionTrigger:    captionRules.hook,
+    structureHint:     postTypeData.intent,
     mustInclude,
     avoid,
-    ctaType:        businessRule.ctaType,
-    hashtagCount:   platformRule.hashtagCount,
+    ctaType:           captionRules.cta_type || businessRule.ctaType,
+
+    // Post type metadata
+    postTypeName:      postTypeData.name,
+    postTypeCategory:  postTypeData.category,
+    postTypeIntent:    postTypeData.intent,
+    hinglishTriggers:  postTypeData.hinglish_triggers || [],
+    carouselStructure: postTypeData.carousel_structure || null,
+
+    // Format metadata
+    format,
+    formatDimensions:  formatData.dimensions,
+    formatDesignTip:   formatData.design_tip,
+
+    // Platform metadata
+    hashtagCount:      platformRule.hashtagCount,
+    optimalHashtags:   platformData.optimal_hashtags,
+    bestPostTimes:     platformData.best_post_times,
+
+    // Time context
     timeContext: {
       timeOfDay:    timeCtx.timeOfDay,
       dayVibe:      timeCtx.dayContext.vibe,
@@ -225,20 +264,29 @@ function getOptimalCaptionConfig(platform = 'instagram_feed', businessType = 'ge
   };
 }
 
-// --- Self-test (run: node backend/services/captionContext.js) ---
+// ─── Self-test ────────────────────────────────────────────────────────────────
 function runTests() {
   const MONDAY_MORNING = new Date('2026-04-06T10:00:00');
 
   const scenarios = [
-    { label: 'Scenario 1 — Salon + Instagram Reel + Offer',       args: ['instagram_reel',  'salon', 'offer',      MONDAY_MORNING] },
-    { label: 'Scenario 2 — Cafe + Facebook + Daily Post',          args: ['facebook',         'cafe',  'daily_post', MONDAY_MORNING] },
-    { label: 'Scenario 3 — Gym + WhatsApp Status + Monday Motivation', args: ['whatsapp_status', 'gym',  'motivation', MONDAY_MORNING] },
+    {
+      label: 'Scenario 1 — Salon + Instagram + Carousel + Educational Tips',
+      args:  ['instagram', 'salon', 'educational_tips', 'carousel', MONDAY_MORNING],
+    },
+    {
+      label: 'Scenario 2 — Cafe + Facebook + Single + Offer Discount',
+      args:  ['facebook', 'cafe', 'offer_discount', 'single', MONDAY_MORNING],
+    },
+    {
+      label: 'Scenario 3 — Gym + WhatsApp + Single + Flash Sale',
+      args:  ['whatsapp', 'gym', 'flash_sale', 'single', MONDAY_MORNING],
+    },
   ];
 
   for (const { label, args } of scenarios) {
-    console.log('\n' + '='.repeat(60));
+    console.log('\n' + '='.repeat(65));
     console.log(label);
-    console.log('='.repeat(60));
+    console.log('='.repeat(65));
     console.log(JSON.stringify(getOptimalCaptionConfig(...args), null, 2));
   }
 }
