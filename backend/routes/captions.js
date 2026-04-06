@@ -1,4 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const { getOptimalCaptionConfig } = require('../services/captionContext');
 
 function getClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -6,6 +7,25 @@ function getClient() {
 
 async function generateSmartCaptions(brandData, postType, offer, platform) {
   const client = getClient();
+
+  const ctx = getOptimalCaptionConfig(
+    platform || 'instagram_feed',
+    brandData?.category || 'general',
+    postType  || 'offer'
+  );
+
+  const contextBlock = `
+Caption Context Config (follow strictly):
+- Platform character range: ${ctx.minChars}–${ctx.maxChars} chars per caption
+- Style: ${ctx.style}
+- Tone: ${ctx.tone}
+- Emotion trigger: ${ctx.emotionTrigger}
+- Structure: ${ctx.structureHint}
+- Must include: ${ctx.mustInclude.join(', ')}
+- Avoid: ${ctx.avoid.join(', ')}
+- CTA type: ${ctx.ctaType}
+- Hashtags per caption: ${ctx.hashtagCount}
+- Time of day: ${ctx.timeContext.timeOfDay} | Day vibe: ${ctx.timeContext.dayVibe}${ctx.timeContext.festivalHint ? '\n- Festival angle: ' + ctx.timeContext.festivalHint : ''}`;
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
@@ -22,6 +42,7 @@ Platform: ${platform || 'instagram'}
 Post Type: ${postType || 'offer'}
 Offer/Info: ${offer}
 Brand Vibe: ${brandData?.mood || 'professional and friendly'}
+${contextBlock}
 
 Generate exactly 5 captions:
 - Caption 1 (urgency)      — Hinglish: FOMO / limited time / act now
@@ -211,7 +232,7 @@ Return ONLY this JSON (no explanation, no markdown):
   }
 }
 
-async function generateCaptionsForUI(businessType, topic) {
+async function generateCaptionsForUI(businessType, topic, platform = 'instagram_feed', postType = 'offer') {
   const axios = require('axios');
   const baseUrl = process.env.AICREDITS_BASE_URL;
   const apiKey  = process.env.AICREDITS_API_KEY;
@@ -223,13 +244,30 @@ async function generateCaptionsForUI(businessType, topic) {
   const intent = await extractIntent(rawInput, axios, baseUrl, apiKey);
   console.log('[captions] Extracted intent:', JSON.stringify(intent));
 
-  // Step 2 — build caption prompt from extracted data
+  // Step 2 — get optimal context config
+  const resolvedBusinessType = intent.businessType || businessType || 'general';
+  const ctx = getOptimalCaptionConfig(platform, resolvedBusinessType, postType);
+  console.log('[captions] Context config:', JSON.stringify({ platform, resolvedBusinessType, postType, minChars: ctx.minChars, maxChars: ctx.maxChars, style: ctx.style, ctaType: ctx.ctaType }));
+
+  // Step 3 — build caption prompt from extracted data + context
   const businessLine = [
     intent.businessName && `Business Name: ${intent.businessName}`,
-    `Business Type: ${intent.businessType || businessType || 'general'}`,
+    `Business Type: ${resolvedBusinessType}`,
     `Offer: ${intent.offer || topic}`,
     intent.audience && `Target Audience: ${intent.audience}`,
     intent.instructions && `Special Instructions: ${intent.instructions}`,
+    ``,
+    `Caption Context (follow strictly):`,
+    `- Character range: ${ctx.minChars}–${ctx.maxChars} chars per caption`,
+    `- Style: ${ctx.style}`,
+    `- Tone: ${ctx.tone}`,
+    `- Emotion trigger: ${ctx.emotionTrigger}`,
+    `- Structure: ${ctx.structureHint}`,
+    `- Must include: ${ctx.mustInclude.join(', ')}`,
+    `- Avoid: ${ctx.avoid.join(', ')}`,
+    `- CTA type: ${ctx.ctaType}`,
+    `- Hashtags per caption: ${ctx.hashtagCount}`,
+    ctx.timeContext.festivalHint && `- Festival angle: ${ctx.timeContext.festivalHint}`,
   ].filter(Boolean).join('\n');
 
   const userMessage = `Generate 5 captions for:\n${businessLine}`;

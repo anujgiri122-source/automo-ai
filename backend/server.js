@@ -28,12 +28,12 @@ app.use(express.json());
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'automo-ai' }));
 
-// POST /api/generate-captions — UI caption generator (businessType + topic)
+// POST /api/generate-captions — UI caption generator (businessType + topic + optional platform/postType)
 app.post('/api/generate-captions', async (req, res) => {
   try {
-    const { businessType, topic } = req.body;
+    const { businessType, topic, platform, postType } = req.body;
     if (!businessType && !topic) return res.status(400).json({ error: 'businessType or topic is required' });
-    const captions = await generateCaptionsForUI(businessType, topic);
+    const captions = await generateCaptionsForUI(businessType, topic, platform, postType);
     res.json({ captions });
   } catch (err) {
     console.error('generate-captions error:', err.message);
