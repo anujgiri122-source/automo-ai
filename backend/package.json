@@ -16,6 +16,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "playwright": "^1.58.2",
+    "puppeteer": "^24.40.0",
     "razorpay": "^2.9.6",
     "sharp": "^0.34.5"
   },

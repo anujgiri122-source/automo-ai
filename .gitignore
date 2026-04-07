@@ -26,3 +26,4 @@ build/
 *.pem
 Thumbs.db
 .vercel
+backend/test-flyer-output.png
