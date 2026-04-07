@@ -11,7 +11,7 @@
 
 const sharp = require('sharp');
 
-const POLLINATIONS_URL = 'https://image.pollinations.ai/prompt';
+const AICREDITS_URL = 'https://api.aicredits.in/v1/images/generations';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -29,8 +29,8 @@ function getDimensions(format) {
   return { width: 1080, height: 1080 };
 }
 
-function getApiSize(format) {
-  if (format === 'story' || format === 'reel_cover') return '1024x1536';
+// dall-e-2 only supports 256x256, 512x512, 1024x1024
+function getApiSize() {
   return '1024x1024';
 }
 
@@ -60,43 +60,181 @@ function wrapText(text, maxLen) {
   return lines.length ? lines : [''];
 }
 
-// ─── Background image prompts per post type ───────────────────────────────────
+// ─── Background prompts: businessType × postType matrix ──────────────────────
+
+const NO_TEXT = 'NO text, NO words, NO letters, NO numbers, NO signs, NO watermarks, NO people';
+
+const BACKGROUND_PROMPTS = {
+  salon: {
+    offer_discount:    `Luxury hair salon interior, soft pink and gold bokeh, scissors and hair accessories blurred background, premium beauty spa atmosphere, warm lighting, ${NO_TEXT}`,
+    flash_sale:        `Dramatic beauty salon backdrop, bright spotlight on empty styling chair, rose gold and pink tones, high-energy sale atmosphere, ${NO_TEXT}`,
+    festival_post:     `Indian festive decoration, marigold flowers, diyas, soft golden light, elegant beauty salon backdrop, rangoli patterns, ${NO_TEXT}`,
+    seasonal_promo:    `Seasonal salon decoration, soft floral arrangement, pastel spring or warm autumn tones, premium beauty backdrop, ${NO_TEXT}`,
+    product_launch:    `Luxury beauty products arrangement, marble surface, clean white background, premium hair care products blurred, rose gold accents, ${NO_TEXT}`,
+    educational_tips:  `Clean white marble surface, hair care products arranged aesthetically, minimal modern salon, soft shadows, ${NO_TEXT}`,
+    testimonial:       `Soft pink bokeh salon interior, five-star luxury beauty atmosphere, warm flattering light, elegant and trustworthy, ${NO_TEXT}`,
+    before_after:      `Split beauty transformation background, left muted soft tones, right vibrant glamorous, premium salon aesthetic, ${NO_TEXT}`,
+    behind_the_scenes: `Authentic Indian hair salon workspace, styling tools on counter, warm professional lighting, real salon atmosphere, ${NO_TEXT}`,
+    team_spotlight:    `Modern salon interior, bright airy space, styling stations visible, professional beauty environment, ${NO_TEXT}`,
+    announcement:      `Elegant salon reveal background, soft spotlight, pink and gold tones, premium beauty studio feel, ${NO_TEXT}`,
+    brand_story:       `Warm nostalgic Indian salon, vintage beauty tools, soft heritage lighting, personal and emotional atmosphere, ${NO_TEXT}`,
+    giveaway:          `Luxury beauty gift set arrangement, pink ribbon and gold confetti, premium salon products, celebration feel, ${NO_TEXT}`,
+    referral_program:  `Elegant salon loyalty aesthetic, pink and gold tones, beauty community warmth, premium feel, ${NO_TEXT}`,
+    poll_question:     `Playful salon interior, colorful hair swatches, fun beauty debate atmosphere, bright and inviting, ${NO_TEXT}`,
+    restock_alert:     `Premium salon shelves with hair products, beautifully arranged, soft professional lighting, ${NO_TEXT}`,
+    collaboration:     `Two elegant beauty brands merging, soft pink tones, flowers and beauty products, premium aesthetic, ${NO_TEXT}`,
+    local_targeting:   `Warm Indian local salon street-facing, inviting entrance, community feel, soft neighborhood atmosphere, ${NO_TEXT}`,
+    meme_entertainment:`Fun playful beauty salon, colorful hair dye swatches, lighthearted and relatable salon vibes, ${NO_TEXT}`,
+    how_it_works:      `Clean minimal salon process background, soft step-by-step visual, white and pink tones, professional, ${NO_TEXT}`,
+  },
+
+  gym: {
+    offer_discount:    `Modern gym equipment, dark dramatic lighting, energy and power, blurred weights and machines background, neon accent lights, ${NO_TEXT}`,
+    flash_sale:        `Explosive gym energy, bright spotlight on barbell, electric blue and orange tones, maximum urgency and power, ${NO_TEXT}`,
+    festival_post:     `Energetic colorful confetti, fitness motivation, dynamic bold background, vibrant celebration, ${NO_TEXT}`,
+    seasonal_promo:    `Gym seasonal energy, bold dark tones, dynamic lighting, powerful athletic atmosphere, ${NO_TEXT}`,
+    product_launch:    `Premium gym supplement or equipment on dark pedestal, spotlight reveal, bold dramatic reveal, ${NO_TEXT}`,
+    educational_tips:  `Clean gym floor, training equipment arranged, professional athletic setting, crisp and motivational, ${NO_TEXT}`,
+    testimonial:       `Strong gym atmosphere, dark motivational background, achievement and success energy, ${NO_TEXT}`,
+    before_after:      `Gym transformation split background, left dim and soft, right powerful and vibrant, motivational energy, ${NO_TEXT}`,
+    behind_the_scenes: `Real gym interior, equipment in use blurred, authentic workout atmosphere, raw and energetic, ${NO_TEXT}`,
+    team_spotlight:    `Professional gym trainer background, bold sports setting, team and community energy, ${NO_TEXT}`,
+    announcement:      `Bold gym announcement background, explosive energy, spotlight and power rays, athletic vibe, ${NO_TEXT}`,
+    brand_story:       `Gym origin story background, gritty authentic training floor, passion and hard work, ${NO_TEXT}`,
+    giveaway:          `Gym contest prize setup, bold colors, championship belt or trophy, winner energy, ${NO_TEXT}`,
+    referral_program:  `Gym community energy, team workout atmosphere, friendship and fitness warmth, ${NO_TEXT}`,
+    poll_question:     `Fun gym debate backdrop, dumbbells vs barbells, colorful athletic energy, ${NO_TEXT}`,
+    restock_alert:     `Gym product shelf, supplements and equipment, clean professional display, ${NO_TEXT}`,
+    collaboration:     `Two fitness brands synergy, bold energetic backdrop, power partnership, ${NO_TEXT}`,
+    local_targeting:   `Local gym street view, community fitness center, welcoming neighborhood feel, ${NO_TEXT}`,
+    meme_entertainment:`Funny gym scene, relatable workout humor, bold colorful background, ${NO_TEXT}`,
+    how_it_works:      `Step-by-step gym process, clean bold layout, athletic and professional, ${NO_TEXT}`,
+  },
+
+  cafe: {
+    offer_discount:    `Cozy cafe interior, coffee cup steam rising, warm brown and cream tones, bokeh fairy lights, wooden table surface, ${NO_TEXT}`,
+    flash_sale:        `Urgent cafe deal energy, bright spotlight on coffee cup, warm amber tones, limited time feel, ${NO_TEXT}`,
+    festival_post:     `Indian festival cafe decoration, warm atmosphere, diyas and marigold flowers, chai and sweets, cozy festive vibe, ${NO_TEXT}`,
+    seasonal_promo:    `Seasonal cafe menu backdrop, warm spiced tones, autumn leaves or monsoon rain outside window, cozy, ${NO_TEXT}`,
+    product_launch:    `New cafe item reveal, clean wooden surface, food photography style, premium presentation, ${NO_TEXT}`,
+    educational_tips:  `Cafe knowledge aesthetic, coffee beans and brewing equipment, warm minimal, barista craft, ${NO_TEXT}`,
+    testimonial:       `Happy cafe corner, cozy seating, warm light, five-star hospitality feel, ${NO_TEXT}`,
+    before_after:      `Cafe transformation, old vs new interior, warm inviting upgrade, ${NO_TEXT}`,
+    behind_the_scenes: `Real cafe kitchen or brewing station, authentic barista workspace, steam and craft, ${NO_TEXT}`,
+    team_spotlight:    `Warm cafe counter, friendly service atmosphere, professional barista setting, ${NO_TEXT}`,
+    announcement:      `Exciting cafe news backdrop, warm spotlight, coffee and celebration feel, ${NO_TEXT}`,
+    brand_story:       `Original chai stall to modern cafe, nostalgic warm tones, Indian coffee culture journey, ${NO_TEXT}`,
+    giveaway:          `Cafe prize arrangement, free coffee and snacks, warm cozy contest feel, ${NO_TEXT}`,
+    referral_program:  `Cafe loyalty warmth, friends sharing coffee, community and chai, ${NO_TEXT}`,
+    poll_question:     `Fun cafe debate, chai vs coffee, warm playful atmosphere, ${NO_TEXT}`,
+    restock_alert:     `Cafe ingredient or product display, fresh and abundant, warm professional, ${NO_TEXT}`,
+    collaboration:     `Two cafe brands or food collab, warm inviting backdrop, delicious synergy, ${NO_TEXT}`,
+    local_targeting:   `Local neighborhood cafe, street-facing warm entrance, community gathering spot, ${NO_TEXT}`,
+    meme_entertainment:`Relatable cafe humor, coffee addict vibes, warm funny background, ${NO_TEXT}`,
+    how_it_works:      `Cafe ordering process, clean warm steps, professional and inviting, ${NO_TEXT}`,
+  },
+
+  restaurant: {
+    offer_discount:    `Indian food spread, colorful spices and dishes, warm restaurant lighting, blurred background, appetizing atmosphere, ${NO_TEXT}`,
+    flash_sale:        `Urgent restaurant deal, bright food close-up, warm red and gold tones, appetizing urgency, ${NO_TEXT}`,
+    festival_post:     `Indian festival feast setup, traditional thali, diyas and flowers, warm golden celebration, ${NO_TEXT}`,
+    seasonal_promo:    `Seasonal Indian restaurant special, seasonal ingredients displayed, warm culinary atmosphere, ${NO_TEXT}`,
+    product_launch:    `New dish reveal on premium plate, dramatic food photography lighting, restaurant launch, ${NO_TEXT}`,
+    educational_tips:  `Indian spices and ingredients arranged beautifully, culinary knowledge, clean backdrop, ${NO_TEXT}`,
+    testimonial:       `Satisfied dining atmosphere, warm restaurant setting, five-star Indian hospitality, ${NO_TEXT}`,
+    behind_the_scenes: `Indian restaurant kitchen, chefs working blurred, authentic culinary craft, ${NO_TEXT}`,
+    announcement:      `Restaurant news backdrop, warm dining room spotlight, excitement and appetite, ${NO_TEXT}`,
+    brand_story:       `Family restaurant heritage, traditional Indian cooking, warm nostalgic kitchen, ${NO_TEXT}`,
+    giveaway:          `Restaurant free meal prize setup, beautifully plated food, celebration feel, ${NO_TEXT}`,
+    local_targeting:   `Local Indian restaurant entrance, welcoming street-facing, community dining spot, ${NO_TEXT}`,
+    default:           `Indian restaurant ambience, warm lighting, rich colors, appetizing atmosphere, ${NO_TEXT}`,
+  },
+  
+
+  hotel: {
+    offer_discount:    `Luxury hotel lobby, marble floors, elegant chandelier, premium hospitality feel, soft gold tones, ${NO_TEXT}`,
+    flash_sale:        `Premium hotel room reveal, luxurious bedding, dramatic spotlight, exclusive deal energy, ${NO_TEXT}`,
+    festival_post:     `Grand hotel festival decoration, marigold and lights, premium Indian hospitality, celebration, ${NO_TEXT}`,
+    seasonal_promo:    `Luxury hotel seasonal offer, resort pool or mountain view, premium escape feel, ${NO_TEXT}`,
+    product_launch:    `New hotel amenity or suite reveal, luxury spotlight, premium and exclusive, ${NO_TEXT}`,
+    testimonial:       `Five-star hotel atmosphere, plush premium setting, world-class hospitality feel, ${NO_TEXT}`,
+    brand_story:       `Heritage hotel origin, classic Indian architecture, timeless hospitality story, ${NO_TEXT}`,
+    announcement:      `Grand hotel announcement, luxury spotlight, prestigious and elegant, ${NO_TEXT}`,
+    local_targeting:   `Boutique hotel exterior, charming local landmark, premium neighborhood presence, ${NO_TEXT}`,
+    default:           `Luxury hotel ambience, marble and gold, premium Indian hospitality, ${NO_TEXT}`,
+  },
+
+  retail: {
+    offer_discount:    `Indian retail store product display, festive sale decoration, bright lights and color, shopping excitement, ${NO_TEXT}`,
+    flash_sale:        `Flash sale retail energy, bold product spotlights, urgent shopping atmosphere, vibrant colors, ${NO_TEXT}`,
+    festival_post:     `Indian festival shopping, Diwali or Navratri decoration, vibrant retail celebration, ${NO_TEXT}`,
+    seasonal_promo:    `Seasonal retail display, well-arranged products, festive shopping atmosphere, ${NO_TEXT}`,
+    product_launch:    `New product on clean retail display, spotlight reveal, premium retail presentation, ${NO_TEXT}`,
+    restock_alert:     `Freshly stocked retail shelves, products neatly arranged, abundance and availability, ${NO_TEXT}`,
+    testimonial:       `Happy retail shopping environment, bright store atmosphere, customer satisfaction feel, ${NO_TEXT}`,
+    announcement:      `Retail store news backdrop, bright spotlight, exciting new arrival energy, ${NO_TEXT}`,
+    local_targeting:   `Local Indian shop exterior, warm welcoming entrance, community retail charm, ${NO_TEXT}`,
+    default:           `Clean Indian retail display, colorful product arrangement, professional shop atmosphere, ${NO_TEXT}`,
+  },
+
+  doctor: {
+    offer_discount:    `Clean medical clinic interior, soft blue and white tones, professional healthcare atmosphere, ${NO_TEXT}`,
+    festival_post:     `Healthcare wellness celebration, soft professional tones, health and happiness theme, ${NO_TEXT}`,
+    educational_tips:  `Medical information backdrop, clean clinical aesthetic, trustworthy healthcare feel, ${NO_TEXT}`,
+    testimonial:       `Warm patient-friendly clinic, soft professional lighting, trust and care atmosphere, ${NO_TEXT}`,
+    announcement:      `Medical clinic news backdrop, clean professional setting, important healthcare feel, ${NO_TEXT}`,
+    default:           `Professional medical clinic, clean white and blue, calm trustworthy atmosphere, ${NO_TEXT}`,
+  },
+
+  coaching: {
+    offer_discount:    `Academic coaching backdrop, books and stationery, bright motivational atmosphere, ${NO_TEXT}`,
+    festival_post:     `Educational celebration, student achievement, bright inspirational feel, ${NO_TEXT}`,
+    educational_tips:  `Clean study desk setup, books and notes, focused learning environment, ${NO_TEXT}`,
+    testimonial:       `Student success atmosphere, bright academic setting, achievement and pride feel, ${NO_TEXT}`,
+    announcement:      `Academic announcement backdrop, bright educational energy, results and success, ${NO_TEXT}`,
+    default:           `Educational coaching atmosphere, books and learning, bright inspirational background, ${NO_TEXT}`,
+  },
+
+  default: {
+    offer_discount:    `Professional business sale background, brand colors gradient, clean modern design, subtle bokeh pattern, ${NO_TEXT}`,
+    flash_sale:        `Bold urgent sale background, spotlight and energy, professional modern urgency, ${NO_TEXT}`,
+    festival_post:     `Indian festival celebration, diyas and marigolds, warm golden festive atmosphere, ${NO_TEXT}`,
+    seasonal_promo:    `Seasonal promotion background, warm inviting gradient, professional modern design, ${NO_TEXT}`,
+    product_launch:    `Clean product reveal background, spotlight on pedestal, premium modern presentation, ${NO_TEXT}`,
+    educational_tips:  `Clean minimal knowledge background, soft gradient, professional and calm, ${NO_TEXT}`,
+    testimonial:       `Warm trust background, soft bokeh, five-star professional atmosphere, ${NO_TEXT}`,
+    before_after:      `Transformation split background, left muted right vibrant, professional contrast, ${NO_TEXT}`,
+    giveaway:          `Celebration prize background, confetti and gold, winner energy, ${NO_TEXT}`,
+    meme_entertainment:`Fun playful background, bright colors, relatable and entertaining, ${NO_TEXT}`,
+    local_targeting:   `Local Indian business background, community warmth, professional neighborhood feel, ${NO_TEXT}`,
+    announcement:      `Bold announcement background, spotlight and energy, professional excitement, ${NO_TEXT}`,
+    brand_story:       `Warm storytelling background, nostalgic lighting, authentic brand atmosphere, ${NO_TEXT}`,
+    how_it_works:      `Clean process background, minimal steps motif, modern professional, ${NO_TEXT}`,
+    behind_the_scenes: `Authentic workspace background, real and candid professional atmosphere, ${NO_TEXT}`,
+    team_spotlight:    `Professional team backdrop, clean modern interior, welcoming atmosphere, ${NO_TEXT}`,
+    poll_question:     `Interactive engaging background, colorful debate atmosphere, fun professional, ${NO_TEXT}`,
+    restock_alert:     `Back-in-stock background, shelves with products, scarcity and excitement, ${NO_TEXT}`,
+    collaboration:     `Partnership harmony background, two elements merging, professional synergy, ${NO_TEXT}`,
+    referral_program:  `Community sharing background, network warmth, referral chain, ${NO_TEXT}`,
+  },
+};
+
+// Normalise businessType → key in BACKGROUND_PROMPTS
+const BUSINESS_ALIASES = {
+  hair_beauty_salon: 'salon', beauty_salon: 'salon', beauty: 'salon',
+  fitness: 'gym', fitness_centre: 'gym',
+  food: 'cafe', coffee: 'cafe',
+  shop: 'retail', clothing: 'retail', saree_shop: 'retail', bike_shop: 'retail',
+  health: 'doctor', clinic: 'doctor',
+  tuition: 'coaching', school: 'coaching',
+};
 
 function buildBgPrompt(postType, primaryColor, businessType) {
-  const colorHint = `dominant color palette ${primaryColor}`;
-  const noText    = 'absolutely NO text, NO words, NO letters, NO numbers, NO signs, NO watermarks';
-  const base      = `pure decorative background for social media post, ${noText}, professional photography style, ${colorHint}`;
-
-  const businessBoost =
-    businessType === 'salon'   ? 'Indian hair salon and beauty atmosphere, soft elegant styling, ' :
-    businessType === 'cafe'    ? 'Indian cafe warm coffee and food atmosphere, ' :
-    businessType === 'gym'     ? 'fitness and workout high-energy atmosphere, ' :
-    businessType === 'retail'  ? 'Indian retail shopping festive atmosphere, ' : '';
-
-  const map = {
-    offer_discount:    `Vibrant festive sale background, confetti particles, bokeh celebration lights, Indian market energy, ${businessBoost}${base}`,
-    flash_sale:        `Urgent bold electric background, lightning bolt effects, bright spotlight, high-energy flash sale, ${businessBoost}${base}`,
-    festival_post:     `Traditional Indian festival background, diya oil lamps, marigold flower petals, rangoli patterns, warm golden glow, ${businessBoost}${base}`,
-    seasonal_promo:    `Seasonal Indian promotion background, warm festive bokeh lights, floral decorations, ${businessBoost}${base}`,
-    product_launch:    `Sleek modern product launch background, spotlight on empty pedestal, luxury reveal, premium gradient, ${businessBoost}${base}`,
-    educational_tips:  `Clean minimal knowledge background, soft gradient, calm and professional, books and plants motif, ${businessBoost}${base}`,
-    testimonial:       `Warm trust-building background, soft bokeh five-star motif, satisfied atmosphere, ${businessBoost}${base}`,
-    before_after:      `Split transformation background, left muted right vibrant, beauty and wellness, ${businessBoost}${base}`,
-    giveaway:          `Exciting prize celebration background, wrapped gift boxes, gold confetti, winner atmosphere, ${businessBoost}${base}`,
-    meme_entertainment:`Fun playful bright cartoon background, entertainment and humor vibe, ${businessBoost}${base}`,
-    local_targeting:   `Indian local neighborhood background, community market atmosphere, local street energy, ${businessBoost}${base}`,
-    announcement:      `Bold announcement background, rays of light, spotlight, exciting news energy, ${businessBoost}${base}`,
-    brand_story:       `Warm nostalgic storytelling background, soft heritage lighting, emotional atmosphere, ${businessBoost}${base}`,
-    how_it_works:      `Clean process background, minimal arrows and steps motif, modern infographic style, ${businessBoost}${base}`,
-    behind_the_scenes: `Authentic behind-the-scenes background, real workshop or salon interior atmosphere, ${businessBoost}${base}`,
-    team_spotlight:    `Professional team background, bright clean modern interior, welcoming atmosphere, ${businessBoost}${base}`,
-    poll_question:     `Interactive colorful debate background, question mark motifs, fun engagement vibe, ${businessBoost}${base}`,
-    restock_alert:     `Back-in-stock excitement background, shelves with vibrant products, scarcity energy, ${businessBoost}${base}`,
-    collaboration:     `Partnership harmony background, two complementary elements merging together, ${businessBoost}${base}`,
-    referral_program:  `Community sharing background, network of friendly people, referral chain warmth, ${businessBoost}${base}`,
-  };
-
-  return map[postType] || map.offer_discount;
+  const bKey   = BUSINESS_ALIASES[businessType] || businessType || 'default';
+  const bMap   = BACKGROUND_PROMPTS[bKey] || BACKGROUND_PROMPTS.default;
+  const prompt = bMap[postType] || bMap.default || BACKGROUND_PROMPTS.default[postType] || BACKGROUND_PROMPTS.default.offer_discount;
+  // Append color hint at the end so it influences but doesn't override the scene
+  return `${prompt}, color palette accented with ${primaryColor}`;
 }
 
 // ─── Fallback gradient (if AI image API fails) ────────────────────────────────
@@ -114,26 +252,63 @@ async function buildGradientFallback(width, height, primaryColor, secondaryColor
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
-// ─── Step A: Generate background via Pollinations.AI (FLUX, no auth) ─────────
+// ─── Step A: Generate background via dall-e-2 on AiCredits ───────────────────
+
+const BUSINESS_SIMPLE_PROMPTS = {
+  salon:   'Luxury hair salon interior, pink roses, gold scissors, soft bokeh lighting, NO text, NO words, NO people',
+  gym:     'Modern gym equipment, dark dramatic lighting, weights blurred background, energy feel, NO text, NO words',
+  cafe:    'Cozy Indian cafe interior, coffee steam, warm brown lighting, wooden table, bokeh fairy lights, NO text, NO words',
+  hotel:   'Luxury hotel lobby, marble floors, chandelier, premium feel, NO text, NO words',
+  default: 'Professional business background, gradient colors, clean modern, NO text',
+};
+
+function getSimplePrompt(businessType) {
+  const key = BUSINESS_ALIASES[businessType] || businessType || 'default';
+  return BUSINESS_SIMPLE_PROMPTS[key] || BUSINESS_SIMPLE_PROMPTS.default;
+}
 
 async function generateAiBackground(postType, brandKit, format) {
-  const prompt = buildBgPrompt(postType, brandKit.primaryColor, brandKit.businessType || 'general');
-  const { width: w, height: h } = getDimensions(format);
-  // Pollinations supports up to 1024; use 1024x1024 for square, 768x1344 for portrait
-  const [pw, ph] = (format === 'story' || format === 'reel_cover') ? [768, 1344] : [1024, 1024];
+  const apiKey = process.env.AICREDITS_API_KEY;
+  if (!apiKey) throw new Error('AICREDITS_API_KEY not set in environment');
 
-  const url = `${POLLINATIONS_URL}/${encodeURIComponent(prompt)}?width=${pw}&height=${ph}&nologo=true&model=flux&seed=${Date.now() % 9999}`;
-  console.log('[FlyerService] Pollinations FLUX request | size:', pw, 'x', ph);
+  // Use detailed matrix prompt when available, fall back to simple business prompt
+  let prompt = buildBgPrompt(postType, brandKit.primaryColor, brandKit.businessType || 'default');
+  // If the matrix returned the generic fallback, use the simple business prompt instead
+  if (!prompt || prompt.trim().length < 10) {
+    prompt = getSimplePrompt(brandKit.businessType);
+  }
 
-  const res = await fetch(url, { method: 'GET' });
+  const size = getApiSize();
+  console.log('[FlyerService] AiCredits dall-e-2 request | size:', size);
+
+  const res = await fetch(AICREDITS_URL, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model:  'dall-e-2',
+      prompt,
+      n:      1,
+      size,
+    }),
+  });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Pollinations API ${res.status}: ${errText.substring(0, 200)}`);
+    throw new Error(`AiCredits API ${res.status}: ${errText.substring(0, 300)}`);
   }
 
-  // Response is raw binary JPEG — read as ArrayBuffer
-  const arrayBuf = await res.arrayBuffer();
+  const json = await res.json();
+  const imageUrl = json?.data?.[0]?.url;
+  if (!imageUrl) throw new Error('AiCredits response missing image URL');
+
+  console.log('[FlyerService] Downloading generated image from AiCredits URL');
+  const imgRes = await fetch(imageUrl);
+  if (!imgRes.ok) throw new Error(`Image download failed: ${imgRes.status}`);
+
+  const arrayBuf = await imgRes.arrayBuffer();
   return Buffer.from(arrayBuf);
 }
 
@@ -323,36 +498,57 @@ if (require.main === module) {
   const fs   = require('fs');
   const path = require('path');
 
-  const postData = {
-    caption:              'Sunday special 50% off on haircut! Book now — limited slots!',
-    detected_post_type:   'offer_discount',
-    format:               'single',
-    key_details:          { offer_percentage: 50, day: 'Sunday' },
-  };
-
-  const brandKit = {
-    businessName:   'Rajesh Salon',
-    businessType:   'salon',
-    primaryColor:   '#FF6B6B',
-    secondaryColor: '#4ECDC4',
-    contact:        'Call: 98765 43210',
-  };
+  const tests = [
+    {
+      label:   'TEST 1 — salon + offer_discount',
+      outFile: '../test-flyer-salon-offer.png',
+      postData: {
+        caption:            'Sunday special 50% off on haircut! Book now — limited slots!',
+        detected_post_type: 'offer_discount',
+        format:             'single',
+        key_details:        { offer_percentage: 50, day: 'Sunday' },
+      },
+      brandKit: {
+        businessName:   'Rajesh Salon',
+        businessType:   'salon',
+        primaryColor:   '#FF6B6B',
+        secondaryColor: '#4ECDC4',
+        contact:        'Call: 98765 43210',
+      },
+    },
+    {
+      label:   'TEST 2 — cafe + festival_post',
+      outFile: '../test-flyer-cafe-festival.png',
+      postData: {
+        caption:            'Diwali mubarak! Aao milke celebrate karein — special chai aur mithai waiting!',
+        detected_post_type: 'festival_post',
+        format:             'single',
+        key_details:        {},
+      },
+      brandKit: {
+        businessName:   'Chai Corner',
+        businessType:   'cafe',
+        primaryColor:   '#E67E22',
+        secondaryColor: '#F1C40F',
+        contact:        'www.chaicorner.in',
+      },
+    },
+  ];
 
   (async () => {
-    try {
+    for (const t of tests) {
+      console.log('\n' + '='.repeat(60));
+      console.log(t.label);
       console.log('='.repeat(60));
-      console.log('TEST: Generating flyer for Rajesh Salon...');
-      console.log('='.repeat(60));
-      const result = await generateFlyer(postData, brandKit);
-      const outPath = path.join(__dirname, '../test-flyer-hf.png');
-      fs.writeFileSync(outPath, result.buffer);
-      console.log('\nFlyer saved to:', outPath);
-      console.log('Size:', result.width, 'x', result.height);
-      console.log('File size:', result.buffer.length, 'bytes');
-      console.log('Base64 length:', result.base64.length, 'chars');
-    } catch (err) {
-      console.error('FAILED:', err.message);
-      process.exit(1);
+      try {
+        const result  = await generateFlyer(t.postData, t.brandKit);
+        const outPath = path.join(__dirname, t.outFile);
+        fs.writeFileSync(outPath, result.buffer);
+        console.log('Saved:', outPath);
+        console.log('Size:', result.width, 'x', result.height, '|', Math.round(result.buffer.length / 1024) + 'KB');
+      } catch (err) {
+        console.error('FAILED:', err.message);
+      }
     }
   })();
 }
