@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const { generateSmartCaptions, generateCaptionsForUI } = require('./routes/captions');
 const { handleFlyerRequest } = require('./routes/flyer');
+const { generateFlyer } = require('./services/flyerService');
 const { deductCredits, getCredits } = require('./routes/credits');
 const { logPost } = require('./routes/post');
 const paymentRouter   = require('./routes/payment');
@@ -58,6 +59,37 @@ app.post('/api/captions', async (req, res) => {
 
 // POST /api/flyer/prepare — prepare Canva MCP flyer query
 app.post('/api/flyer/prepare', handleFlyerRequest);
+
+// POST /api/generate-flyer — AI background + Sharp compositing
+// Body: { businessName, caption, postType, format?, brandKit: { primaryColor, secondaryColor, logoUrl } }
+app.post('/api/generate-flyer', async (req, res) => {
+  try {
+    const { businessName, caption, postType, format, brandKit } = req.body;
+    if (!caption || !postType) return res.status(400).json({ error: 'caption and postType are required' });
+
+    const postData = {
+      caption,
+      detected_post_type: postType,
+      format:             format || 'single',
+      key_details:        req.body.key_details || {},
+    };
+
+    const bk = {
+      businessName:   businessName   || brandKit?.businessName   || 'Business',
+      businessType:   req.body.businessType || brandKit?.businessType || 'general',
+      primaryColor:   req.body.primaryColor || brandKit?.primaryColor || '#FF6B35',
+      secondaryColor: req.body.secondaryColor || brandKit?.secondaryColor || '#FFD700',
+      logoUrl:        brandKit?.logoUrl || null,
+      contact:        req.body.contact || brandKit?.contact || '',
+    };
+
+    const flyer = await generateFlyer(postData, bk);
+    res.json({ flyerBase64: flyer.base64, mimeType: 'image/png', width: flyer.width, height: flyer.height });
+  } catch (err) {
+    console.error('[/api/generate-flyer] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // GET /api/credits/:userId — get credit balance
 app.get('/api/credits/:userId', async (req, res) => {
