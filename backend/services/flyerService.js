@@ -11,7 +11,7 @@
 
 const sharp = require('sharp');
 
-const MODEL_IMAGE = 'chatgpt-image-latest';
+const POLLINATIONS_URL = 'https://image.pollinations.ai/prompt';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -114,36 +114,27 @@ async function buildGradientFallback(width, height, primaryColor, secondaryColor
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
-// ─── Step A: Generate background via AiCredits image API ─────────────────────
+// ─── Step A: Generate background via Pollinations.AI (FLUX, no auth) ─────────
 
 async function generateAiBackground(postType, brandKit, format) {
-  const prompt  = buildBgPrompt(postType, brandKit.primaryColor, brandKit.businessType || 'general');
-  const apiSize = getApiSize(format);
-  console.log('[FlyerService] AI background prompt (first 100 chars):', prompt.substring(0, 100));
+  const prompt = buildBgPrompt(postType, brandKit.primaryColor, brandKit.businessType || 'general');
+  const { width: w, height: h } = getDimensions(format);
+  // Pollinations supports up to 1024; use 1024x1024 for square, 768x1344 for portrait
+  const [pw, ph] = (format === 'story' || format === 'reel_cover') ? [768, 1344] : [1024, 1024];
 
-  const res = await fetch(`${process.env.AICREDITS_BASE_URL}/images/generations`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.AICREDITS_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model:           MODEL_IMAGE,
-      prompt,
-      n:               1,
-      size:            apiSize,
-      response_format: 'b64_json',
-    }),
-  });
+  const url = `${POLLINATIONS_URL}/${encodeURIComponent(prompt)}?width=${pw}&height=${ph}&nologo=true&model=flux&seed=${Date.now() % 9999}`;
+  console.log('[FlyerService] Pollinations FLUX request | size:', pw, 'x', ph);
+
+  const res = await fetch(url, { method: 'GET' });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Image API ${res.status}: ${errText}`);
+    throw new Error(`Pollinations API ${res.status}: ${errText.substring(0, 200)}`);
   }
 
-  const data = await res.json();
-  if (!data?.data?.[0]?.b64_json) throw new Error('No image data in API response');
-  return Buffer.from(data.data[0].b64_json, 'base64');
+  // Response is raw binary JPEG — read as ArrayBuffer
+  const arrayBuf = await res.arrayBuffer();
+  return Buffer.from(arrayBuf);
 }
 
 // ─── Step B: Download logo to buffer ─────────────────────────────────────────
@@ -353,7 +344,7 @@ if (require.main === module) {
       console.log('TEST: Generating flyer for Rajesh Salon...');
       console.log('='.repeat(60));
       const result = await generateFlyer(postData, brandKit);
-      const outPath = path.join(__dirname, '../test-flyer.png');
+      const outPath = path.join(__dirname, '../test-flyer-hf.png');
       fs.writeFileSync(outPath, result.buffer);
       console.log('\nFlyer saved to:', outPath);
       console.log('Size:', result.width, 'x', result.height);
