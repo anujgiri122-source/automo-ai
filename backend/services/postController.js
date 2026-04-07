@@ -9,17 +9,32 @@
  *   const result = await processOwnerRequest(message, businessInfo);
  */
 
-const Anthropic = require('@anthropic-ai/sdk');
 const POST_TYPES = require('../data/postTypes.json');
 const { getOptimalCaptionConfig } = require('./captionContext');
 
-// Lazy client — created on first use so env vars are always resolved
-let _client = null;
-function getClient() {
-  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  return _client;
+const MODEL = 'gpt-4o-mini';
+
+// ─── AiCredits API helper ─────────────────────────────────────────────────────
+
+async function callAiCredits(messages, maxTokens = 512) {
+  const url = process.env.AICREDITS_BASE_URL + '/chat/completions';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.AICREDITS_API_KEY}`,
+    },
+    body: JSON.stringify({ model: MODEL, messages, max_tokens: maxTokens }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`AiCredits API error ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json();
+  return data.choices[0].message.content.trim();
 }
-const MODEL = 'claude-sonnet-4-20250514';
 
 // ─── Step 1: Intent Detection ─────────────────────────────────────────────────
 
@@ -48,13 +63,7 @@ Business: "${businessInfo.businessType || 'general'}" — "${businessInfo.busine
 
 Return JSON only. No explanation. No markdown. Pure JSON object.`;
 
-  const response = await getClient().messages.create({
-    model: MODEL,
-    max_tokens: 512,
-    messages: [{ role: 'user', content: prompt }],
-  });
-
-  const raw = response.content[0].text.trim();
+  const raw = await callAiCredits([{ role: 'user', content: prompt }], 512);
   // Strip markdown code fences if Claude adds them
   const jsonStr = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
 
@@ -113,13 +122,7 @@ Rules:
 
 Return only the caption text. No quotes. No explanation.`;
 
-  const response = await getClient().messages.create({
-    model: MODEL,
-    max_tokens: 400,
-    messages: [{ role: 'user', content: prompt }],
-  });
-
-  return response.content[0].text.trim();
+  return callAiCredits([{ role: 'user', content: prompt }], 400);
 }
 
 // ─── Step 4: Image Prompt Builder ─────────────────────────────────────────────
